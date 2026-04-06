@@ -1,0 +1,10 @@
+{
+  "name": "telegram-claude-code",
+  "version": "1.0.0",
+  "description": "Bidirectional Telegram integration for Claude Code — send and receive messages via a Telegram bot",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "ssh2": "^1.15.0"
+  }
+}
