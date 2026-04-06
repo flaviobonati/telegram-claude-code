@@ -22,12 +22,12 @@ O banco (projeto 45173) é a FONTE ÚNICA DA VERDADE. NUNCA confiar na memória 
 Projeto da fábrica (45173, workspace 19049):
 ```javascript
 import { configureSdkMitra, runQueryMitra, updateRecordMitra, createRecordMitra, createRecordsBatchMitra, runDmlMitra, runDdlMitra, createProjectMitra } from 'mitra-sdk';
-configureSdkMitra({ baseURL: 'https://newmitra.mitrasheet.com:8080', token: 'sk_INIZWkU9KdXJaGdgMDTaTwJw2x0jf2JJoLjMMK_y4EkrJvjvNAG3C4IELkuI0ENW', integrationURL: 'https://newmitra.mitrasheet.com:8080' });
+configureSdkMitra({ baseURL: process.env.MITRA_BASE_URL, token: process.env.MITRA_TOKEN, integrationURL: process.env.MITRA_BASE_URL_INTEGRATIONS });
 ```
 
 Workspace de desenvolvimento (19103):
 ```javascript
-configureSdkMitra({ baseURL: 'https://newmitra.mitrasheet.com:8080', token: 'sk_333CHbqiqgRK1rmmstUWMdMc-rkPADlNNs0IimscKPYtAEepIpn7XzHc8ewD5_26', integrationURL: 'https://newmitra.mitrasheet.com:8080' });
+configureSdkMitra({ baseURL: process.env.MITRA_BASE_URL, token: process.env.MITRA_DEV_TOKEN, integrationURL: process.env.MITRA_BASE_URL_INTEGRATIONS });
 await createProjectMitra({ workspaceId: 19103, name: '[vertical]' });
 // Depois reconfigurar de volta pro token da fábrica para gravar no 45173
 ```
