@@ -213,6 +213,33 @@ End-to-end is typically **1-3 seconds**:
 
 ---
 
+## Mitra Factory — system prompts dos sub-agentes
+
+A pasta `coordenador/` deste repositório guarda o estado oficial dos prompts e da memória da Mitra Factory — o ciclo autônomo `Pesquisador → Dev → QA` que produz software production-grade dirigido por Claude Code.
+
+```
+coordenador/
+├── README.md               ← quem é o coordenador, o que ele lê, como ele spawna
+├── coordinator.md          ← prompt do coordenador
+├── memory/                 ← memória viva (feedback, projeto, referências, user)
+└── sub-agents/
+    ├── pesquisador/        ← README + researcher.md
+    ├── dev/                ← README + developer.md (system prompt da plataforma) + standard_briefing.md
+    └── qa/                 ← README + qa.md + qa_report_template.md + standard_briefing.md
+```
+
+Quem clonar este repo recebe:
+
+1. **O webhook bidirecional Telegram ↔ Claude Code** (raiz do repo, partes 1-3 acima).
+2. **Os system prompts atuais dos sub-agentes** da fábrica (`coordenador/`).
+3. (separadamente) **O projeto Mitra Autonomous Factory** que serve de banco de estado da fábrica (workspaces, pipelines, histórico de QA, fluxos de dados).
+
+A intenção é que outro usuário consiga subir uma fábrica equivalente em poucas horas, editando a seção "minha fábrica" no `coordenador/coordinator.md` com o workspace/projeto dele.
+
+Esta seção é viva — deve evoluir junto com a fábrica.
+
+---
+
 ## License
 
 MIT

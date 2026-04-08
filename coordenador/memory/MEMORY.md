@@ -1,0 +1,25 @@
+- [**INICIO: Ler coordinator.md**](reference_coordinator_prompt.md) — OBRIGATORIO: ler /opt/mitra-factory/prompts/coordinator.md antes de qualquer acao
+- [**OBJETIVO DA FABRICA**](project_factory_goal.md) — Produzir software production-grade via ciclo autonomo Dev⇄QA. 2-3 rounds max. ~2h por sistema.
+- [Flavio](user_flavio.md) — dono da fabrica, unico humano, da comandos e aprova etapas
+- [Arquitetura da Fabrica](project_factory_architecture.md) — 4 agentes: Coordenador, Pesquisador, Dev, QA (Eval e Escopador descontinuados)
+- [**PROJETO SEMPRE DO ZERO**](feedback_projeto_limpo.md) — NUNCA copiar codigo de projeto anterior. Setup: mkdir + logos de /assets/ + .env. Incidente grave 2026-04-07.
+- [**IMPLANTADOR PRIMEIRO**](feedback_implantador_primeiro.md) — Historias: 1o Implantador (setup), 2o Mantenedor, 3o Usuarios finais. GUIAS_TESTE mesma ordem.
+- [**SF TIPOS CORRETOS**](feedback_sf_tipos.md) — SQL pra leitura (~8ms), INTEGRATION pra API (~500ms), JS so logica complexa (~2000ms E2B). JS pra SELECT = rejeicao.
+- [**QA MECANICO**](feedback_qa_mecanico.md) — Inventario rotas/botoes + teste botao por botao + tabela cobertura. Nota = passaram/total. Validado 2026-04-07.
+- [**SMOKE TEST BACKEND**](feedback_smoke_test_backend.md) — Dev testa SFs via SDK, NAO Playwright. listRecordsMitra retorna {content:[...]}. Playwright so pro QA.
+- [**WORKERS DEPOIS**](feedback_workers_depois.md) — Workers NAO na primeira leva do Dev. Construtor nativo do Mitra, pos-MVP.
+- [**DEVELOPER.MD NAO MEXER**](feedback_developer_md_nao_mexer.md) — developer.md eh da plataforma. Regras da fabrica vao no subagent_standard_briefing.md secao 6.
+- [**SPARKLE = UX/UI, NAO IA**](feedback_sparkle_ux.md) — Sparkle = genialidade UX/UI. IA opcional se natural, nunca forcada.
+- [**FEATURES x HISTORIAS**](feedback_implantador_primeiro.md) — Cruzar features MUST vs historias antes de aprovar pesquisa. Toda feature MUST em pelo menos 1 historia.
+- [**VALIDAR LOGIN**](feedback_validar_login_obrigatorio.md) — SF login DEVE ser publica. Testar cada persona via executeServerFunctionMitra com input (nao params).
+- [**ANTI-DEPLOY-CRUZADO**](feedback_anti_deploy_cruzado.md) — Path /tmp/pkg-{PROJECT_ID}/, tar com src/frontend/+output/, validar titulo pos-deploy.
+- [**COORDENADOR PRE-VALIDA BUILD**](feedback_coordenador_pre_valida.md) — Curl/grep no bundle ANTES de spawnar QA. 10s > 30min desperdicado.
+- [**RESPEITAR TOKENS**](feedback_gemini_diagnostico.md) — Se bate-volta repete 2x, PARAR e investigar causa raiz. QA focado quando poucos bugs.
+- [**TELEGRAM**](feedback_telegram_sem_plugin.md) — Enviar: node /opt/mitra-factory/tg.mjs. Receber: ler arquivo telegram_msgs/msg_*.txt.
+- [**DESIGN**](feedback_design_refinement.md) — Font 14px corpo/24px titulo, shadow-sm max, zero emoji/camelCase/sombra profunda.
+- [**PIPELINE_ID em LOG**](feedback_pipeline_id_log.md) — LOG_ATIVIDADES/INTERACOES sempre com PIPELINE_ID quando vinculado a sistema.
+- [Quirks do mitra-sdk](feedback_sdk_quirks.md) — runQueryMitra precisa de sql:, updateRecordMitra falha em campos grandes, runDmlMitra pra TEXT
+- [**ROUND MATADOR**](feedback_dev_round_matador.md) — Pos-QA: mandar TODOS os bugs no mesmo round + buglist com 100% DONE obrigatorio. Mundo perfeito = 2 rounds totais.
+- [**GUIA DO TESTADOR = DEV**](feedback_guia_teste_do_qa.md) — Dev entrega guia no output final. Coordenador extrai e grava em GUIAS_TESTE. QA apenas usa como contrato de teste.
+- [Padrao de spawn](feedback_spawn_pattern.md) — usar /tmp/run_agent.sh com run_in_background. Nunca & nem < /dev/null com pipe
+- [Sistemas em andamento](project_sistemas_em_andamento.md) — Gamificacao (PJ 45701), Planejamento (PJ 45761), Comissoes (PJ 45769). Help Desk e Fechamento em ideia.
