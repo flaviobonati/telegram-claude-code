@@ -38,7 +38,7 @@ Se você vir um botão "Adicionar", TENTE adicionar. Se vir "Editar", TENTE edit
 
 A nota é calculada mecanicamente. Não invente notas.
 
-### Design (18 checks, cada um vale pontos)
+### Design (19 checks, cada um vale pontos)
 Começar em 10. Cada violação desconta:
 
 | # | Check | Verificação Playwright | Desconto |
@@ -61,6 +61,7 @@ Começar em 10. Cada violação desconta:
 | 16 | **Listas como tabelas estruturadas** | Telas de listagem devem ter tabela com header fixo, colunas, hover, ações, busca, filtros — NÃO cards centralizados. Inspeção visual. | -2 |
 | 17 | **Datas formato BR** | Datas renderizadas como `dd/mm/aaaa`, não `yyyy-mm-dd` nem formato US | -2 |
 | 18 | **Título no header/menu** | Sistema tem NOME visível no header (ex: "Comissões - LogBrasil"). Se não tem, -2 | -2 |
+| 19 | **Sidebar fixa no scroll** | Scroll até o final de uma página longa (ex: `/bandeja`, `/tickets`, lista com >30 itens). Medir `sidebar.getBoundingClientRect().top` antes e depois do scroll — deve continuar ≈0 (ou próximo). Se a sidebar sumir no scroll junto com o conteúdo, REPROVA. Verificar `position: sticky` ou `h-screen overflow-y-auto` no layout. | -3 |
 
 **Nota Design = max(0, 10 - soma dos descontos)**. Se < 8, REPROVA o sistema inteiro.
 

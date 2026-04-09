@@ -221,6 +221,12 @@ O Flávio reprovou sistemas com "nota UI 10" porque estavam com fontes gigantes,
 - Tags/badges devem ser legíveis em AMBOS (testar)
 - Backgrounds: white / slate-50 (light), slate-900 / slate-950 (dark)
 
+### Layout — Sidebar fixa (OBRIGATÓRIO)
+- **Menu lateral SEMPRE fixo** — nunca rola junto com o conteúdo principal. Implementar com `position: sticky; top: 0; height: 100vh` ou layout `flex` com sidebar `h-screen overflow-y-auto` + main `flex-1 overflow-y-auto`.
+- Quando o usuário rola a tela principal, a sidebar permanece visível no mesmo lugar. Nunca deve sumir no scroll.
+- Testar: carregar qualquer página longa, rolar até o final, verificar que todos os itens da sidebar continuam visíveis e clicáveis.
+- **Por quê**: sistemas production-grade (Zendesk, Linear, Notion, Asana) todos têm sidebar fixa. Sidebar que rola junto é experiência de template amador.
+
 Se o seu sistema parecer "brega", "gigante", "sem polish", ou "parece template gratuito", o Flávio vai reprovar com nota 1 — independente de funcionar 100%.
 
 ## REGRA #8: Sparkle = Genialidade de UX/UI (NÃO IA)

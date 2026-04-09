@@ -473,14 +473,14 @@ O QA copia `qa_report_template.md` para `output/qa_report_{sistema}_r{N}.md` e *
 
 | Dimensão | O que testa |
 |---|---|
-| **Design (18 checks)** | Ver seção 12.4. Começa em 10 e desconta cada violação. |
+| **Design (19 checks)** | Ver seção 12.4. Começa em 10 e desconta cada violação. |
 | **UX** | `(personas que completam jornada / total) × 10`. Se 5 de 7 personas operam 100%, UX = 7.14. Nunca arredondar. |
 | **Aderência** | `(MUSTs funcionando end-to-end / total MUSTs) × 10`. Se faltar 1 MUST crítica, já não é 10. |
 | **FluxoDados** | `(cadeias end-to-end completas / total cadeias) × 10`. Cadeia "parcial" (UI existe mas não persiste no banco) **não conta**. |
 
 Qualquer dimensão abaixo de 10 → REPROVADO. Sem arredondamento.
 
-### 12.4 Regra H — os 18 checks visuais
+### 12.4 Regra H — os 19 checks visuais
 
 1. `font-size` body ≤ 16px
 2. `font-size` h1 ≤ 24px (medido, não "parecem grandes")
@@ -500,6 +500,7 @@ Qualquer dimensão abaixo de 10 → REPROVADO. Sem arredondamento.
 16. **Listas estruturadas + cards alternados** onde fizer sentido: sistema bom alterna entre **tabelas estruturadas** (pra densidade de dados tabulares) e **cards ricos** (pra destaque, dashboards, listas com status visual). Cards não são proibidos — **forçar tabela em todo lugar também é erro**. QA valida que a escolha faz sentido pro tipo de dado exibido.
 17. Datas formato BR (`dd/mm/aaaa`, com `formatBrDate`)
 18. Título visível no header/menu (nome do sistema, pra o Usuário saber onde está)
+19. **Sidebar fixa no scroll**: o menu lateral nunca pode rolar junto com o conteúdo principal. Layout com `position: sticky` ou `h-screen overflow-y-auto` separado. Sistemas production-grade (Linear, Notion, Zendesk) todos têm sidebar fixa — quem rola junto parece template amador. QA mede `sidebar.getBoundingClientRect().top` antes e depois do scroll de uma página longa; deve continuar ≈0.
 
 Cada violação desconta 1-3 pontos. Design é a dimensão em que a fábrica mais falha historicamente porque é fácil "achar que tá bonito" sem medir. Os checks são medidos por Playwright via `getComputedStyle()` + queries DOM — impossível mentir.
 
