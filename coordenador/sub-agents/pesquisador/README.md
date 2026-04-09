@@ -8,7 +8,7 @@ Apenas:
 - `researcher.md` (neste diretório)
 - Task específica que o Coordenador escreve em `/tmp/task_pesquisa_*.md` com o nome do vertical
 
-**Eu NÃO recebo o `standard_briefing.md`.** Pesquisa não mexe em logos, .env, SF tipos, deploy etc. Só dados conceituais (incumbente, features, histórias, fluxos).
+**Eu NÃO recebo o `dev.md`** (regras do Dev). Pesquisa não mexe em logos, .env, SF tipos, deploy etc. Só dados conceituais (incumbente, features, histórias, fluxos).
 
 ## O que eu produzo
 Grava direto no banco da fábrica (FACTORY_PROJECT_ID — ver `coordinator.md` seção "Minha fábrica"):

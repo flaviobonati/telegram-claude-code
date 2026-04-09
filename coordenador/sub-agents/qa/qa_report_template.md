@@ -30,7 +30,7 @@
 
 ---
 
-## SEÇÃO 2 — Design (18 checks visuais)
+## SEÇÃO 2 — Design (19 checks visuais)
 
 | # | Check | Valor medido | Status | Desconto |
 |---|---|---|---|---|
@@ -89,7 +89,7 @@
 | E — Toda ação clicável | PENDING | PENDING | |
 | F — Logout funciona | PENDING | PENDING | |
 | G — Menu leva a conteúdo real | PENDING | PENDING | |
-| H — Refinamento Visual (18 checks acima) | PENDING | PENDING | |
+| H — Refinamento Visual (19 checks acima) | PENDING | PENDING | |
 
 ---
 

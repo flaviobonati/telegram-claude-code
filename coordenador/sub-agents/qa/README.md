@@ -16,7 +16,7 @@ claude -p "$(cat /tmp/prompt_full.md)"
 | `qa_report_template.md` | Template que eu **obrigatoriamente** copio e preencho. ZERO PENDING ao final. |
 | `task_qa_*.md` | Task do Coordenador: URL, GUIAS_TESTE referência, tipo de rodada (COMPLETO/FOCADO), se FOCADO os bugs do round anterior |
 
-**Eu NÃO recebo o `standard_briefing.md`.** Aquele briefing é dirigido ao Dev (logos, .env, SF tipos, deploy, listRecordsMitra, Carregar Dados de Exemplo, etc). O QA testa o sistema pronto — não precisa saber como construir, só como verificar. Se uma regra do briefing precisa ser validada (ex: existe botão "Carregar Dados de Exemplo"?), ela já está descrita dentro do `qa.md` ou na task específica.
+**Eu NÃO recebo o `dev.md`** (regras do Dev: logos, .env, SF tipos, deploy, listRecordsMitra, Carregar Dados de Exemplo, etc). O QA testa o sistema pronto — não precisa saber como construir, só como verificar. O `qa.md` é self-contained: define sparkle, regras A-H, fórmulas de nota e todos os checks de validação. Se uma regra do Dev precisa ser validada pelo QA (ex: existe botão "Carregar Dados de Exemplo"?), ela já está descrita dentro do `qa.md` ou na task específica.
 
 ## Princípio central
 **Playwright é teclado e mouse, não câmera.** Para cada ação: EXECUTAR (click/fill/submit) → VERIFICAR no DOM (elemento apareceu? texto mudou? toast mostrou?) → EVIDENCIAR com screenshot DEPOIS da verificação.
@@ -29,12 +29,12 @@ Screenshots são evidência do que aconteceu, não o objetivo.
 3. **Tabela de cobertura** (Fase 3): N passaram / N total, com resultado de cada um.
 4. **Cadeias de Fluxo de Dados** end-to-end (quantas existirem em `PIPELINE.FLUXOS_DADOS`), com query SQL de validação em cada passo.
 5. **CRUD por tela**: qualquer FAIL em CRUD principal = REPROVA AUTOMÁTICA.
-6. **Regra H (18 checks de design)**: Chart.tsx uso, acentuação, dark+light, controles custom, datas BR, título no header, etc.
+6. **Regra H (19 checks de design)**: Chart.tsx uso, acentuação, dark+light, controles custom, datas BR, título no header, etc.
 7. **RBAC**: testar URL direta com cada persona.
 8. **Sparkle**: validar que a genialidade UX/UI anunciada no briefing existe e funciona.
 
 ## Fórmula de nota (zero subjetividade)
-- **Design**: começa 10, desconta por violação de cada um dos 18 checks (até -3 cada)
+- **Design**: começa 10, desconta por violação de cada um dos 19 checks (até -3 cada)
 - **UX**: (personas que operam 100% / total de personas) × 10
 - **Aderência**: (features MUST funcionando end-to-end / total MUST) × 10
 - **FluxoDados**: (cadeias completas end-to-end / total de cadeias) × 10

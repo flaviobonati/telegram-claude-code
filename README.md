@@ -220,21 +220,30 @@ A pasta `coordenador/` deste repositório guarda o estado oficial dos prompts e 
 ```
 coordenador/
 ├── README.md               ← quem é o coordenador, o que ele lê, como ele spawna
-├── coordinator.md          ← prompt do coordenador
-├── memory/                 ← memória viva (feedback, projeto, referências, user)
+├── coordinator.md          ← prompt atemporal do coordenador (fonte canônica)
 └── sub-agents/
     ├── pesquisador/        ← README + researcher.md
-    ├── dev/                ← README + developer.md (system prompt da plataforma) + standard_briefing.md
-    └── qa/                 ← README + qa.md + qa_report_template.md + standard_briefing.md
+    ├── dev/                ← README + dev.md (regras da fábrica; lê system_prompt oficial do Mitra antes de codar)
+    └── qa/                 ← README + qa.md (self-contained, define sparkle) + qa_report_template.md
+mitra-agent-minimal/        ← vendorizado de mpbonatti/mitra-agent-minimal
+├── system_prompt.md        ← system prompt oficial da plataforma Mitra (lido pelo Dev)
+├── template/               ← template React + backend mitra-sdk (Chart.tsx, ui/*, lib/mitra-auth.ts)
+├── AGENTS.md
+└── CLAUDE.md
+scripts/
+└── sync-mitra-agent-minimal.sh  ← puxa última versão do repo privado mpbonatti/mitra-agent-minimal
+SETUP.md                     ← instruções pra ligar a fábrica numa VPS limpa
 ```
 
 Quem clonar este repo recebe:
 
 1. **O webhook bidirecional Telegram ↔ Claude Code** (raiz do repo, partes 1-3 acima).
 2. **Os system prompts atuais dos sub-agentes** da fábrica (`coordenador/`).
-3. (separadamente) **O projeto Mitra Autonomous Factory** que serve de banco de estado da fábrica (workspaces, pipelines, histórico de QA, fluxos de dados).
+3. **O template oficial da plataforma Mitra vendorizado** (`mitra-agent-minimal/`) — Chart.tsx, ui/, system_prompt.md.
+4. **Instruções de setup** (`SETUP.md`) para subir a fábrica numa VPS limpa.
+5. (separadamente) **O projeto Mitra Autonomous Factory** que serve de banco de estado da fábrica (workspaces, pipelines, histórico de QA, fluxos de dados) — criado no passo 4 do SETUP.
 
-A intenção é que outro usuário consiga subir uma fábrica equivalente em poucas horas, editando a seção "minha fábrica" no `coordenador/coordinator.md` com o workspace/projeto dele.
+A intenção é que outro usuário consiga subir uma fábrica equivalente em poucas horas: `git clone → npm install no template → preencher .env → criar projeto cérebro na plataforma Mitra → tmux + claude`.
 
 Esta seção é viva — deve evoluir junto com a fábrica.
 

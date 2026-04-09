@@ -49,7 +49,7 @@ O QA avalia cada sistema em 4 dimensões. Qualquer uma abaixo de 10 = REPROVADO.
 
 | Dimensão | Fórmula |
 |---|---|
-| **Design** | 10 menos os descontos da Regra H (18 checks visuais — ver seção 12) |
+| **Design** | 10 menos os descontos da Regra H (19 checks visuais — ver seção 12) |
 | **UX** | (personas que completam a jornada inteira / total de personas) × 10 |
 | **Aderência** | (features MUST funcionando end-to-end / total de MUSTs) × 10 |
 | **FluxoDados** | (cadeias de fluxo de dados completas end-to-end / total de cadeias) × 10 |
@@ -165,11 +165,11 @@ Se o QA aprovar 10/10/10/10 e eu confirmei que o guia está persistido em GUIAS_
 # Concatenar os componentes num arquivo antes do spawn (evita problemas de escape inline)
 cat sub-agents/{agente}/*.md /tmp/task_{sistema}_{round}.md > /tmp/prompt_full.md
 
-# Rodar em background via helper
-/tmp/run_agent.sh /tmp/prompt_full.md /tmp/out_{sistema}_{round}.txt
+# Rodar em background via helper versionado no repo
+/opt/mitra-factory/scripts/run_agent.sh /tmp/prompt_full.md /tmp/out_{sistema}_{round}.txt
 ```
 
-Onde `/tmp/run_agent.sh` é:
+Onde `/opt/mitra-factory/scripts/run_agent.sh` é o helper versionado em `scripts/run_agent.sh` do repo — essencialmente:
 ```bash
 #!/bin/bash
 claude --dangerously-skip-permissions -p - < "$1" > "$2" 2>&1
@@ -674,10 +674,10 @@ Sub-agents recebem prompts complexos com curl, backticks, `${...}`, `%{http_code
 
 ```bash
 cat base.md briefing.md task.md > /tmp/prompt_full.md
-/tmp/run_agent.sh /tmp/prompt_full.md /tmp/out.txt
+/opt/mitra-factory/scripts/run_agent.sh /tmp/prompt_full.md /tmp/out.txt
 ```
 
-Onde `run_agent.sh` é `claude --dangerously-skip-permissions -p - < "$1" > "$2" 2>&1`. O `-p -` lê stdin e evita escape hell.
+Onde `scripts/run_agent.sh` é `claude --dangerously-skip-permissions -p - < "$1" > "$2" 2>&1` (versionado no repo). O `-p -` lê stdin e evita escape hell.
 
 ### 16.3 Concatenação de prompt por agente
 
@@ -854,7 +854,7 @@ Esta seção registra **como o processo evoluiu** e **por que cada componente ex
 - **Nota por fórmula, zero subjetividade**: 4 dimensões (Design, UX, Aderência, FluxoDados), cada uma com cálculo explícito. Impossível inflar.
 - **Template obrigatório (`qa_report_template.md`)**: 12+ seções, todas com campo PENDING no início, QA preenche cada uma. Rejeito relatório que tenha PENDING.
 - **Playwright mecânico em 3 fases**: inventário → teste click-a-click → tabela de cobertura. Impossível mentir sobre botão que não testou.
-- **Regra H — 18 checks visuais** medidos via `getComputedStyle()`: mensura font, padding, shadow, emojis, CamelCase, logos, Chart wrapper. Cada violação desconta.
+- **Regra H — 19 checks visuais** medidos via `getComputedStyle()`: mensura font, padding, shadow, emojis, CamelCase, logos, Chart wrapper, sidebar fixa. Cada violação desconta.
 - **Dimensão FluxoDados**: a quarta dimensão que mudou tudo. QA tem que clicar o trigger da cadeia e validar via SQL no banco que os dados propagaram.
 - **Round COMPLETO vs FOCADO**: R1 completo, R2+ focado quando 1-3 bugs pendentes. Economiza tokens.
 - **"Nunca morrer calado"**: QA que bate em bloqueio para, screenshota, retorna relatório parcial.

@@ -46,7 +46,34 @@ npm install   # pequeno
 
 ## Passo 3 — Configurar variáveis de ambiente
 
-Copie `.env.example` pra `.env` e preencha com seus tokens:
+A fábrica usa **dois arquivos `.env` separados** por segurança (ver `coordinator.md` princípio 8.11):
+
+### 3.1. `.env.coordinator` — variáveis da fábrica (obrigatório)
+
+Vive em `/opt/mitra-factory/.env.coordinator`. Contém tokens do Mitra. É carregado **explicitamente** pelo Coordenador via `dotenv.config({ path: '/opt/mitra-factory/.env.coordinator' })` — nunca fica exposto como `.env` puro pra evitar que scripts de sub-agente o carreguem por acidente e contaminem o banco da fábrica.
+
+```bash
+cd /opt/mitra-factory
+cp .env.coordinator.example .env.coordinator
+$EDITOR .env.coordinator
+```
+
+Variáveis:
+
+| Variável | O que é | Como obter |
+|---|---|---|
+| `MITRA_BASE_URL` | URL da API Mitra (ex: `https://newmitra.mitrasheet.com:8080`) | Fornecido pelo Mitra |
+| `MITRA_BASE_URL_INTEGRATIONS` | Geralmente igual ao `MITRA_BASE_URL` | — |
+| `FACTORY_PROJECT_ID` | ID do projeto da Fábrica Autônoma (o cérebro da fábrica) | Criado conforme Passo 4 |
+| `FACTORY_WORKSPACE_ID` | ID do workspace onde o projeto da fábrica vive | Painel Mitra |
+| `FACTORY_TOKEN` | Token do workspace do cérebro | Painel Mitra → Workspace → Tokens |
+| `DEV_WORKSPACE_ID` | ID do workspace de desenvolvimento (separado do cérebro) | Painel Mitra |
+| `DEV_WORKSPACE_TOKEN` | Token do workspace de desenvolvimento | Painel Mitra |
+| `GEMINI_API_KEY` | (opcional) Gemini pra sistemas com IA opcional | Google AI Studio |
+
+### 3.2. `.env` — variáveis do webhook do Telegram (opcional)
+
+Só preencha se for usar o webhook bidirecional Telegram ↔ fábrica (Passo 8). Vive em `/opt/mitra-factory/.env` (a raiz do repo).
 
 ```bash
 cd /opt/mitra-factory
@@ -54,26 +81,22 @@ cp .env.example .env
 $EDITOR .env
 ```
 
-Variáveis obrigatórias:
+Variáveis:
 
-| Variável | O que é | Como obter |
-|---|---|---|
-| `MITRA_BASE_URL` | URL da API Mitra (ex: `https://newmitra.mitrasheet.com:8080`) | Fornecido pelo Mitra |
-| `MITRA_TOKEN` | Token do **workspace de desenvolvimento** da fábrica (onde os sistemas são construídos) | Painel Mitra → Workspace → Tokens |
-| `MITRA_BASE_URL_INTEGRATIONS` | Geralmente igual ao `MITRA_BASE_URL` | — |
-| `FACTORY_PROJECT_ID` | ID do projeto da Fábrica Autônoma (o cérebro da fábrica) | Criado conforme Passo 4 |
-| `FACTORY_WORKSPACE_ID` | ID do workspace onde o projeto da fábrica vive | Painel Mitra |
-| `DEV_WORKSPACE_ID` | ID do workspace de desenvolvimento (separado do da fábrica) | Painel Mitra |
-| `DEV_WORKSPACE_TOKEN` | Token do workspace de desenvolvimento | Painel Mitra |
-| `GEMINI_API_KEY` | (opcional) Gemini pra sistemas com IA opcional | Google AI Studio |
-| `TELEGRAM_BOT_TOKEN` | (opcional) Bot do Telegram pra notificações | @BotFather |
-| `TELEGRAM_CHAT_ID` | (opcional) Chat ID do usuário | @userinfobot |
+| Variável | O que é |
+|---|---|
+| `BOT_TOKEN` | Token do bot do Telegram (obtido via @BotFather) |
+| `CHAT_ID` | Chat ID do usuário que conversa com a fábrica (obtido via @userinfobot) |
+| `SSH_HOST` / `SSH_PORT` / `SSH_USER` / `SSH_PRIVATE_KEY` | Dados pra o webhook da Vercel fazer SSH na VPS e entregar mensagens |
+| `TELEGRAM_ALLOWED_USER` | ID do usuário autorizado a falar com o bot |
+| `TMUX_SESSION` | Nome da sessão tmux onde o Coordenador está rodando (padrão `main`) |
+| `MSG_DIR` | Onde gravar as mensagens recebidas (padrão `/tmp/telegram_msgs`) |
 
 ## Passo 4 — Criar o projeto da Autonomous Factory (cérebro)
 
 A fábrica precisa de um **projeto Mitra dedicado** pra guardar o estado dos sistemas em andamento (tabelas `PIPELINE`, `HISTORICO_QA`, `LOG_ATIVIDADES`, `FEATURES`, `AGENTES`, etc.). Crie esse projeto na plataforma Mitra **uma única vez** e grave o ID em `FACTORY_PROJECT_ID`.
 
-O schema do banco está descrito no `coordenador/coordinator.md` seção "Sistema cérebro". Use os scripts de setup dentro de `scripts/` (ou crie um novo `setup-factory-brain.mjs`) pra popular as tabelas.
+O schema do banco está descrito no `coordenador/coordinator.md` seção **5. O sistema cérebro (Autonomous Factory)** — tabelas `PIPELINE`, `FEATURES`, `HISTORICO_QA`, `LOG_ATIVIDADES`, `INTERACOES`, `AGENTES`, `GUIAS_TESTE`, `SECOND_BRAIN`, `OPORTUNIDADES` (+ `HUMILHACAO_FABRICA` descontinuada). Crie o projeto pela UI do Mitra e use a SDK (`runDdlMitra`, `createServerFunctionMitra`) pra popular esquema + SFs base. Um script `setup-factory-brain.mjs` ainda não existe — é um TODO documentado em `coordinator.md` e deve ser criado quando alguém for subir uma fábrica do zero pela primeira vez.
 
 > **Importante:** se você NÃO está partindo do zero e já tem um projeto cérebro em uso, use `pullFromS3Mitra` (documentado em `coordenador/sub-agents/dev/dev.md` seção 3.3) pra recuperar o estado.
 
