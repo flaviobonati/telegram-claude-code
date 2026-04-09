@@ -1,0 +1,31 @@
+# Credenciais do consultor (NUNCA commitar)
+.env.local
+
+# Admin skill (local only, not shared)
+.claude/commands/mitra-admin.md
+
+# Dependencies
+node_modules/
+
+# OS
+.DS_Store
+
+# Test projects (local only)
+test-*/
+*-19*/
+vetpaw/
+kam/
+kam-v3-*/
+gestao-pedidos/
+pokemon-glm/
+
+# Local files
+*.log
+checkup.js
+create-test-projects.js
+test-*.js
+test-*.mjs
+objetivos-dia.md
+chain_mp_layout_old.md
+system_prompt_backup.md
+system_prompt_claudim.md

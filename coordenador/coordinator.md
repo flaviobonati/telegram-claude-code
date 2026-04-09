@@ -156,7 +156,7 @@ Se o QA aprovar 10/10/10/10 e eu confirmei que o guia está persistido em GUIAS_
 | Sub-agente | Pasta do prompt | Quando | Recebe |
 |---|---|---|---|
 | Pesquisador | `sub-agents/pesquisador/` | No início do ciclo de um sistema novo. | `researcher.md` + task da pesquisa. Pesquisa só popula campos do `PIPELINE`, não mexe em código/deploy. |
-| Dev | `sub-agents/dev/` | Após o Usuário aprovar a pesquisa, e novamente a cada round matador. | `dev.md` (regras da fábrica — **inclui instrução pra o Dev ler o `system_prompt.md` oficial do Mitra antes de codar**, que vive em `/opt/mitra-factory/system_prompt.md` e é mantido no repo `mpbonatti/mitra-agent-minimal`) + task específica. |
+| Dev | `sub-agents/dev/` | Após o Usuário aprovar a pesquisa, e novamente a cada round matador. | `dev.md` (regras da fábrica — **inclui instrução pra o Dev ler o `system_prompt.md` oficial do Mitra antes de codar**, que vive em `/opt/mitra-factory/mitra-agent-minimal/system_prompt.md` e é mantido no repo `mpbonatti/mitra-agent-minimal`) + task específica. |
 | QA | `sub-agents/qa/` | Após Dev entregar + Checks pré-QA passarem + GUIAS_TESTE persistido. | `qa.md` (self-contained — define sparkle, regras A-H, fórmulas de nota, tudo dentro) + `qa_report_template.md` + task específica. |
 
 ### Como monto o prompt e spawno
@@ -394,7 +394,7 @@ Quando o sistema já existe e o Dev precisa **reconstruir algo** (SFs perdidas, 
 
 ### 11.1 O que vai no prompt do Dev
 
-1. `dev.md` (regras da fábrica — **já contém a instrução obrigatória de ler `/opt/mitra-factory/system_prompt.md` INTEIRO antes de codar**, que é o system prompt oficial da plataforma Mitra vindo do repo público `mpbonatti/mitra-agent-minimal`)
+1. `dev.md` (regras da fábrica — **já contém a instrução obrigatória de ler `/opt/mitra-factory/mitra-agent-minimal/system_prompt.md` INTEIRO antes de codar**, que é o system prompt oficial da plataforma Mitra vindo do repo público `mpbonatti/mitra-agent-minimal`)
 2. `task_dev_{sistema}_r{N}.md` (spec específica do round)
 
 O `system_prompt.md` da plataforma Mitra **não** é concatenado ao prompt (é longo, >2700 linhas) — o Dev lê via `Read` na primeira ação. O `dev.md` é o contrato explícito dessa obrigação.
@@ -692,7 +692,7 @@ cat sub-agents/qa/qa.md sub-agents/qa/qa_report_template.md /tmp/task_qa.md > /t
 cat sub-agents/pesquisador/researcher.md /tmp/task_pesquisa.md > /tmp/prompt_pesq_full.md
 ```
 
-O `dev.md` começa instruindo o Dev a ler `/opt/mitra-factory/system_prompt.md` (system prompt oficial do Mitra, >2700 linhas) antes de codar — por isso não concatenamos esse arquivo inteiro.
+O `dev.md` começa instruindo o Dev a ler `/opt/mitra-factory/mitra-agent-minimal/system_prompt.md` (system prompt oficial do Mitra, >2700 linhas) antes de codar — por isso não concatenamos esse arquivo inteiro.
 
 ### 16.4 Limpar Playwright zombies ANTES de spawnar QA
 
@@ -835,7 +835,7 @@ Esta seção registra **como o processo evoluiu** e **por que cada componente ex
 
 **Evoluções**:
 
-- **`dev.md` separado do system prompt da plataforma**: o `system_prompt.md` oficial do Mitra (do repo `mpbonatti/mitra-agent-minimal`) vive em `/opt/mitra-factory/system_prompt.md` e é a fonte canônica de SDK, templates, auth, deploy. O `dev.md` da fábrica adiciona uma camada de regras em cima (storytelling, round matador, design tokens, sparkle, etc.) e começa instruindo o Dev a ler o system prompt oficial antes de codar.
+- **`dev.md` separado do system prompt da plataforma**: o `system_prompt.md` oficial do Mitra (do repo `mpbonatti/mitra-agent-minimal`) vive em `/opt/mitra-factory/mitra-agent-minimal/system_prompt.md` e é a fonte canônica de SDK, templates, auth, deploy. O `dev.md` da fábrica adiciona uma camada de regras em cima (storytelling, round matador, design tokens, sparkle, etc.) e começa instruindo o Dev a ler o system prompt oficial antes de codar.
 - **Smoke test backend obrigatório via SDK** antes de entregar. Dev confirma login das personas, conta linhas das tabelas principais, valida SFs críticas. Playwright fica fora.
 - **Dados pré-populados no `setup-backend.mjs`**: o sistema nasce com dados de exemplo (empresa da pesquisa + algumas linhas de cada tabela principal), não vazio. Permite testar no primeiro login.
 - **Botão "Carregar Dados de Exemplo"** em toda tela de import. Popula em 1 clique. O Usuário e o QA testam sem depender de CSV.

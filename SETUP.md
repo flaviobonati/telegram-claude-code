@@ -1,0 +1,170 @@
+# Setup — Mitra Factory numa VPS nova
+
+Este guia liga a fábrica numa VPS Linux limpa. Após esses passos, você terá um tmux com o Coordenador (Claude Code) orquestrando sub-agentes (Pesquisador, Dev, QA) que produzem sistemas verticais **production-grade 10/10/10/10** na plataforma Mitra.
+
+## O que a fábrica precisa
+
+- **Linux** (Debian/Ubuntu testado)
+- **Node.js 20+** (Dev e QA rodam scripts `.mjs`)
+- **Git**
+- **tmux** (pra manter o Coordenador rodando após fechar SSH)
+- **Claude Code CLI** (`npm i -g @anthropic-ai/claude-code`)
+- **Playwright** (QA usa Chromium) — `npx playwright install`
+- **Tokens do Mitra** (base URL + workspace token)
+- **Token do Telegram** (opcional — só se quiser notificações no celular)
+
+## Passo 1 — Clonar o repo no local canônico
+
+A fábrica assume que todos os paths absolutos começam em `/opt/mitra-factory/`. O jeito mais simples é clonar o repo direto nesse caminho:
+
+```bash
+sudo mkdir -p /opt/mitra-factory
+sudo chown "$USER:$USER" /opt/mitra-factory
+git clone https://github.com/flaviobonati/telegram-claude-code.git /opt/mitra-factory
+cd /opt/mitra-factory
+```
+
+Se preferir clonar em outro lugar (`~/mitra-factory`, etc.), crie um symlink:
+
+```bash
+git clone https://github.com/flaviobonati/telegram-claude-code.git ~/mitra-factory
+sudo ln -s "$HOME/mitra-factory" /opt/mitra-factory
+```
+
+Depois, todas as referências a `/opt/mitra-factory/...` resolvem pro repo.
+
+## Passo 2 — Instalar dependências do template
+
+O template oficial do Mitra está vendorizado em `mitra-agent-minimal/template/`. Ele precisa de `node_modules` pra você poder buildar sistemas a partir dele:
+
+```bash
+cd /opt/mitra-factory/mitra-agent-minimal/template/frontend
+npm install   # ~211 MB de node_modules. Demora ~2 min na primeira vez.
+cd /opt/mitra-factory/mitra-agent-minimal/template/backend
+npm install   # pequeno
+```
+
+## Passo 3 — Configurar variáveis de ambiente
+
+Copie `.env.example` pra `.env` e preencha com seus tokens:
+
+```bash
+cd /opt/mitra-factory
+cp .env.example .env
+$EDITOR .env
+```
+
+Variáveis obrigatórias:
+
+| Variável | O que é | Como obter |
+|---|---|---|
+| `MITRA_BASE_URL` | URL da API Mitra (ex: `https://newmitra.mitrasheet.com:8080`) | Fornecido pelo Mitra |
+| `MITRA_TOKEN` | Token do **workspace de desenvolvimento** da fábrica (onde os sistemas são construídos) | Painel Mitra → Workspace → Tokens |
+| `MITRA_BASE_URL_INTEGRATIONS` | Geralmente igual ao `MITRA_BASE_URL` | — |
+| `FACTORY_PROJECT_ID` | ID do projeto da Fábrica Autônoma (o cérebro da fábrica) | Criado conforme Passo 4 |
+| `FACTORY_WORKSPACE_ID` | ID do workspace onde o projeto da fábrica vive | Painel Mitra |
+| `DEV_WORKSPACE_ID` | ID do workspace de desenvolvimento (separado do da fábrica) | Painel Mitra |
+| `DEV_WORKSPACE_TOKEN` | Token do workspace de desenvolvimento | Painel Mitra |
+| `GEMINI_API_KEY` | (opcional) Gemini pra sistemas com IA opcional | Google AI Studio |
+| `TELEGRAM_BOT_TOKEN` | (opcional) Bot do Telegram pra notificações | @BotFather |
+| `TELEGRAM_CHAT_ID` | (opcional) Chat ID do usuário | @userinfobot |
+
+## Passo 4 — Criar o projeto da Autonomous Factory (cérebro)
+
+A fábrica precisa de um **projeto Mitra dedicado** pra guardar o estado dos sistemas em andamento (tabelas `PIPELINE`, `HISTORICO_QA`, `LOG_ATIVIDADES`, `FEATURES`, `AGENTES`, etc.). Crie esse projeto na plataforma Mitra **uma única vez** e grave o ID em `FACTORY_PROJECT_ID`.
+
+O schema do banco está descrito no `coordenador/coordinator.md` seção "Sistema cérebro". Use os scripts de setup dentro de `scripts/` (ou crie um novo `setup-factory-brain.mjs`) pra popular as tabelas.
+
+> **Importante:** se você NÃO está partindo do zero e já tem um projeto cérebro em uso, use `pullFromS3Mitra` (documentado em `coordenador/sub-agents/dev/dev.md` seção 3.3) pra recuperar o estado.
+
+## Passo 5 — Instalar Claude Code CLI
+
+```bash
+npm i -g @anthropic-ai/claude-code
+claude --version
+```
+
+Autenticar com sua conta Anthropic:
+
+```bash
+claude auth login
+```
+
+## Passo 6 — (Opcional) Instalar Playwright pro QA
+
+O QA roda browsers headless pra testar sistemas. Precisa do Chromium:
+
+```bash
+cd /opt/mitra-factory
+npx playwright install chromium
+```
+
+## Passo 7 — Iniciar o Coordenador em tmux
+
+O Coordenador é um processo `claude` rodando em tmux que lê os prompts, fala com o Telegram, e spawna sub-agentes:
+
+```bash
+tmux new -s mitra-factory
+cd /opt/mitra-factory
+claude  # entra no REPL do Claude Code. Primeira instrução já lê coordenador/coordinator.md.
+```
+
+Detach do tmux: `Ctrl-b d`. Re-attach: `tmux attach -t mitra-factory`.
+
+## Passo 8 — (Opcional) Configurar webhook do Telegram
+
+Se você quer conversar com a fábrica pelo Telegram:
+
+```bash
+cd /opt/mitra-factory
+# Configura o webhook no Telegram apontando pro endpoint Vercel (ver api/webhook.js)
+# Deploy do webhook:
+vercel --prod
+```
+
+Ver `api/webhook.js` + `tg.mjs` pra detalhes da integração Telegram.
+
+## Passo 9 — Manutenção: sincronizar `mitra-agent-minimal`
+
+A pasta `mitra-agent-minimal/` é uma cópia vendorizada do repo privado `mpbonatti/mitra-agent-minimal`. Pra atualizar:
+
+```bash
+export GH_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+./scripts/sync-mitra-agent-minimal.sh
+git add mitra-agent-minimal/
+git commit -m "Sync mitra-agent-minimal com a versão oficial"
+git push
+```
+
+Após a sincronização, se o template teve mudanças em `package.json`, rode `npm install` de novo dentro de `mitra-agent-minimal/template/frontend/`.
+
+## Verificação final
+
+Dentro do tmux com o Claude rodando, peça ao Coordenador pra fazer um check rápido:
+
+```
+Lista o estado atual dos sistemas no PIPELINE do cérebro da fábrica.
+```
+
+Se ele responder com uma lista de pipelines (mesmo que vazia numa VPS nova), o Coordenador está funcionando, conectado ao Mitra, e pronto pra começar a construir sistemas.
+
+## Troubleshooting
+
+| Problema | Causa provável | Fix |
+|---|---|---|
+| `ECONNREFUSED` ao chamar SDK | Token errado ou `MITRA_BASE_URL` incorreto | Verificar `.env` |
+| `Cannot find module 'mitra-sdk'` | Esqueceu de rodar `npm install` no `mitra-agent-minimal/template/backend/` | Rodar |
+| `Cannot find module 'recharts'` no build | Esqueceu de rodar `npm install` no `mitra-agent-minimal/template/frontend/` | Rodar |
+| Claude não lê `coordinator.md` | Permissões ou CWD errado | `cd /opt/mitra-factory && claude` |
+| Playwright abre chromium mas crasha | Dependências do sistema faltando | `sudo npx playwright install-deps chromium` |
+| `scripts/sync-mitra-agent-minimal.sh` 401 | `GH_TOKEN` sem acesso ao repo privado | Gerar novo token com escopo `repo` |
+
+## Arquitetura em uma linha
+
+```
+Telegram → webhook.js (Vercel) → tmux na VPS → Coordenador (claude -p lendo coordinator.md) →
+spawna Pesquisador / Dev / QA via run_agent.sh → cada sub-agente roda claude --dangerously-skip-permissions
+com prompts de sub-agents/*/*.md + task específica → Dev usa mitra-agent-minimal/template/ +
+mitra-agent-minimal/system_prompt.md → SDK Mitra (createProject, createServerFunction, deployToS3) →
+sistema live em https://{wsId}-{pjId}.prod.mitralab.io
+```
