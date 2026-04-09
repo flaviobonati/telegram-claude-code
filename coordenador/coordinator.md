@@ -349,9 +349,25 @@ Antes de spawnar qualquer Dev, **eu monto o ambiente dele** — o Dev não deve 
 #### Caso A — Sistema novo (one-shot do zero)
 
 1. **Crio o projeto Mitra novo** no DEV_WORKSPACE via `createProjectMitra`, guardo o `projectId` retornado.
-2. **Crio a pasta de trabalho limpa**: `mkdir -p /opt/mitra-factory/workspaces/w-{DEV_WORKSPACE_ID}/p-{projectId}/{frontend,backend}`.
-3. **Copio os logos oficiais** de `/opt/mitra-factory/assets/*.svg` pra `frontend/public/` (pra o Dev não gerar SVG genérico).
-4. **Crio o `backend/.env`** com valores corretos e SEM ambiguidade:
+2. **Crio a pasta de trabalho limpa**: `mkdir -p /opt/mitra-factory/workspaces/w-{DEV_WORKSPACE_ID}/p-{projectId}`.
+3. **Copio o template do Mitra** (frontend + backend) de `/opt/mitra-factory/mitra-agent-minimal/template/` pra pasta de trabalho:
+   ```bash
+   WORK=/opt/mitra-factory/workspaces/w-{DEV_WORKSPACE_ID}/p-{projectId}
+   cp -a /opt/mitra-factory/mitra-agent-minimal/template/frontend "$WORK/frontend"
+   cp -a /opt/mitra-factory/mitra-agent-minimal/template/backend  "$WORK/backend"
+   # node_modules via symlink pra evitar duplicar 211 MB por projeto
+   ln -sfn /opt/mitra-factory/mitra-agent-minimal/template/frontend/node_modules "$WORK/frontend/node_modules"
+   ```
+4. **Symlinko os 4 arquivos-chave do mitra-agent-minimal** no root do workspace, pra o Dev ter acesso local aos contratos da plataforma (AGENTS.md descreve o fluxo, `system_prompt.md` é o prompt oficial, `CLAUDE.md` traz dicas de Claude Code, `.env.example` é o template de credenciais do Mitra agent):
+   ```bash
+   ln -sfn /opt/mitra-factory/mitra-agent-minimal/AGENTS.md        "$WORK/AGENTS.md"
+   ln -sfn /opt/mitra-factory/mitra-agent-minimal/CLAUDE.md        "$WORK/CLAUDE.md"
+   ln -sfn /opt/mitra-factory/mitra-agent-minimal/system_prompt.md "$WORK/system_prompt.md"
+   ln -sfn /opt/mitra-factory/mitra-agent-minimal/.env.example     "$WORK/.env.example"
+   ```
+   **Por que symlink e não cópia:** zero duplicação de disco, e quando eu rodar `scripts/sync-mitra-agent-minimal.sh` pra atualizar a versão oficial, todos os workspaces existentes herdam a nova versão automaticamente. O Dev é instruído no `dev.md` a **nunca** modificar esses arquivos (eles são da plataforma).
+5. **Copio os logos oficiais** de `/opt/mitra-factory/assets/*.svg` pra `frontend/public/` (pra o Dev não gerar SVG genérico).
+6. **Crio o `backend/.env`** com valores corretos e SEM ambiguidade:
    ```
    MITRA_PROJECT_ID={projectId}
    MITRA_WORKSPACE_ID={DEV_WORKSPACE_ID}
@@ -359,9 +375,17 @@ Antes de spawnar qualquer Dev, **eu monto o ambiente dele** — o Dev não deve 
    MITRA_BASE_URL_INTEGRATIONS=https://newmitra.mitrasheet.com:8080
    MITRA_TOKEN={DEV_WORKSPACE_TOKEN}
    ```
-5. **No prompt do Dev**, passo `EXPECTED_PROJECT_ID={projectId}` + instrução explícita de sempre `cd backend/` do projeto antes de rodar qualquer script. O Dev **nunca** roda nada da raiz da VPS.
-6. **Atualizo PIPELINE** no cérebro: `PROJETO_MITRA_ID={projectId}`, `STATUS=desenvolvimento`.
-7. Só então spawno o Dev. Ele começa scaffold Vite no diretório vazio + logos já prontos + `.env` correto.
+7. **Crio o `.env.local` no root do workspace** com as mesmas credenciais (o `AGENTS.md` symlinkado acima instrui o Dev a ler esse arquivo como primeira ação):
+   ```
+   MITRA_BASE_URL=https://newmitra.mitrasheet.com:8080
+   MITRA_TOKEN={DEV_WORKSPACE_TOKEN}
+   MITRA_WORKSPACE_ID={DEV_WORKSPACE_ID}
+   MITRA_PROJECT_ID={projectId}
+   MITRA_DIRECTORY=/opt/mitra-factory/workspaces/w-{DEV_WORKSPACE_ID}/p-{projectId}
+   ```
+8. **No prompt do Dev**, passo `EXPECTED_PROJECT_ID={projectId}` + instrução explícita de sempre `cd backend/` do projeto antes de rodar qualquer script. O Dev **nunca** roda nada da raiz da VPS.
+9. **Atualizo PIPELINE** no cérebro: `PROJETO_MITRA_ID={projectId}`, `STATUS=desenvolvimento`.
+10. Só então spawno o Dev. Ele começa com: template React + backend já prontos, `AGENTS.md` + `system_prompt.md` + `.env.local` no root, logos oficiais nos assets, `.env` do backend correto.
 
 #### Caso B — Recovery / reconstrução de sistema existente (ex: fábrica perdeu SFs)
 

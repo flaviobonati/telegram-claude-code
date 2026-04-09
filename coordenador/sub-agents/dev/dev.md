@@ -61,26 +61,32 @@ O template oficial da plataforma Mitra é **vendorizado no repo da fábrica** em
 
 > **IMPORTANTE**: `pullFromS3Mitra` **não retorna o template** quando o projeto é recém-criado — retorna apenas a última versão deployada (e projeto novo nunca foi deployado, então vem vazio). `pullFromS3Mitra` é pra **recovery** de projetos já deployados (engenharia reversa quando o working dir foi perdido), não pra setup inicial.
 
-### 3.2. Como montar seu working dir pra um projeto novo
+### 3.2. O que o Coordenador já monta pra você ANTES de te spawnar
 
-Crie o projeto na plataforma via SDK, depois **copie o template local** pro seu working dir:
+Você **não** precisa criar o projeto Mitra, copiar template, nem baixar credenciais — o Coordenador faz tudo isso antes de te spawnar. Ao começar a sessão, seu working dir (`/opt/mitra-factory/workspaces/w-{wsId}/p-{pjId}/`) já tem:
 
-```bash
-# 1. Criar o projeto Mitra via script SDK (separado)
-node create-project.mjs  # roda createProjectMitra e devolve projectId
-
-# 2. Copiar template pro working dir do novo projeto
-export PROJECT_ID={projectId}
-export WORKSPACE_ID={workspaceId}
-mkdir -p /opt/mitra-factory/workspaces/w-${WORKSPACE_ID}/p-${PROJECT_ID}
-cp -a /opt/mitra-factory/mitra-agent-minimal/template/frontend /opt/mitra-factory/workspaces/w-${WORKSPACE_ID}/p-${PROJECT_ID}/
-cp -a /opt/mitra-factory/mitra-agent-minimal/template/backend  /opt/mitra-factory/workspaces/w-${WORKSPACE_ID}/p-${PROJECT_ID}/
-
-# 3. Symlink node_modules (evita duplicar 211 MB)
-ln -s /opt/mitra-factory/mitra-agent-minimal/template/node_modules /opt/mitra-factory/workspaces/w-${WORKSPACE_ID}/p-${PROJECT_ID}/frontend/node_modules
+```
+workspaces/w-{wsId}/p-{pjId}/
+├── AGENTS.md          → symlink pra mitra-agent-minimal/AGENTS.md (contrato do Mitra dev agent)
+├── CLAUDE.md          → symlink (dicas de Claude Code pro projeto)
+├── system_prompt.md   → symlink pro system_prompt.md OFICIAL da plataforma Mitra (LEIA INTEIRO antes de codar)
+├── .env.example       → symlink (template de credenciais)
+├── .env.local         → arquivo real com as credenciais DESTE projeto (MITRA_BASE_URL, MITRA_TOKEN, MITRA_WORKSPACE_ID, MITRA_PROJECT_ID, MITRA_DIRECTORY)
+├── frontend/          → template React/Vite/Tailwind copiado, com Chart.tsx + ui/* + mitra-auth.ts + node_modules (via symlink — nunca duplica 211 MB)
+│   └── public/        → já tem mitra-logo-light.svg + mitra-logo-dark.svg oficiais
+└── backend/           → mitra-sdk + package.json + .env (backend/.env tem MITRA_PROJECT_ID + token desse projeto)
 ```
 
-Resultado: você tem `workspaces/w-{wsId}/p-{pjId}/frontend/` com o template completo (incluindo `Chart.tsx`, `ui/*`, `lib/*`) pronto pra modificar.
+**Sua primeira ação** é seguir o `AGENTS.md` local: ler `.env.local` pras credenciais e ler `system_prompt.md` INTEIRO. Esses arquivos são **symlinks** pro `mitra-agent-minimal/` vendorizado no repo da fábrica — é a fonte canônica da plataforma, **nunca modifique** (se editar, você tá mexendo no template global e vai contaminar todos os próximos projetos).
+
+**IMPORTANTE** — essas 4 fontes ficam **simultaneamente** no seu contexto:
+
+1. **`system_prompt.md`** (symlink): regras oficiais do Mitra (SDK, templates, auth, deploy, erros comuns)
+2. **`AGENTS.md`** (symlink): contrato do Mitra dev agent (setup, estrutura esperada)
+3. **`dev.md`** (este arquivo, concat no seu prompt pelo Coordenador): regras específicas da fábrica
+4. **`task_dev_*.md`** (concat no seu prompt): spec específica deste round
+
+Onde houver conflito, a precedência é: `task_dev` > `dev.md` > `AGENTS.md` > `system_prompt.md`. Na prática, quase nunca há conflito — `dev.md` só estreita o que o `system_prompt.md` permite.
 
 ### 3.3. Quando usar pullFromS3Mitra
 
