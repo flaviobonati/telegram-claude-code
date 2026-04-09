@@ -45,41 +45,68 @@ Você recebe do Coordenador:
 
 ---
 
-## 3. Montando o ambiente — Template Mitra + pullFromS3
+## 3. Montando o ambiente — Template Mitra local
 
-### 3.1. O que o Mitra já te dá
+### 3.1. Onde mora o template
 
-Quando o Coordenador chama `createProjectMitra`, a plataforma Mitra **cria o projeto e popula o frontend automaticamente com o template React oficial**, que já contém:
+O template oficial da plataforma Mitra vive **localmente na VPS** em `/opt/mitra-factory/template/` (não é puxado do S3). Ele contém:
 
-- `frontend/src/components/ui/Chart.tsx` — wrapper obrigatório de Recharts + shadcn (com `ChartContainer`, `ShadcnBarChart`, `ShadcnLineChart`, etc.)
-- `frontend/src/components/ui/` — componentes base (Button, Card, Modal, Input, Select, Checkbox, Spreadsheet, DatePicker, etc.)
-- `frontend/src/lib/mitra-auth.ts` — fluxo completo de login (SSO + e-mail)
-- `frontend/vite.config.ts`, `frontend/package.json`, `frontend/tsconfig.json` — tooling já configurado
-- `frontend/.env` e `backend/.env` — populados com PROJECT_ID, WORKSPACE_ID, token, URLs
+- `frontend/` — React + Vite + Tailwind pronto pra codar, com:
+  - `src/components/ui/Chart.tsx` — wrapper obrigatório de Recharts + shadcn (com `ChartContainer`, `ShadcnBarChart`, `ShadcnLineChart`, `ShadcnAreaChart`, `ShadcnComposedChart`, `ShadcnPieChart`)
+  - `src/components/ui/` — componentes base (Button, Card, Modal, Input, Select, Checkbox, Radio, Toast, Badge, ConfirmDialog)
+  - `src/lib/mitra-auth.ts` — fluxo completo de login (SSO + e-mail)
+  - `vite.config.ts`, `package.json`, `tsconfig.json`, `index.html`, `.env` template — tooling já configurado
+- `backend/` — mitra-sdk + package.json + .env template
+- `node_modules/` — dependências pré-instaladas (~211 MB, evita `npm install` toda vez)
 
-**Nunca recrie esses arquivos do zero.** Eles são o contrato da plataforma — se você inventa um `Chart` próprio em vez de usar `ChartContainer`, o QA reprova automaticamente (Regra H #12).
+> **IMPORTANTE**: `pullFromS3Mitra` **não retorna o template** quando o projeto é recém-criado — retorna apenas a última versão deployada (e projeto novo nunca foi deployado, então vem vazio). `pullFromS3Mitra` é pra **recovery** de projetos já deployados (engenharia reversa quando o working dir foi perdido), não pra setup inicial.
 
-### 3.2. Como trazer o template pro seu working dir
+### 3.2. Como montar seu working dir pra um projeto novo
 
-O template mora no S3 da plataforma. Pra tê-lo disponível no seu working dir da VPS, use `pullFromS3Mitra` imediatamente após a criação do projeto:
+Crie o projeto na plataforma via SDK, depois **copie o template local** pro seu working dir:
+
+```bash
+# 1. Criar o projeto Mitra via script SDK (separado)
+node create-project.mjs  # roda createProjectMitra e devolve projectId
+
+# 2. Copiar template pro working dir do novo projeto
+export PROJECT_ID={projectId}
+export WORKSPACE_ID={workspaceId}
+mkdir -p /opt/mitra-factory/workspaces/w-${WORKSPACE_ID}/p-${PROJECT_ID}
+cp -a /opt/mitra-factory/template/frontend /opt/mitra-factory/workspaces/w-${WORKSPACE_ID}/p-${PROJECT_ID}/
+cp -a /opt/mitra-factory/template/backend  /opt/mitra-factory/workspaces/w-${WORKSPACE_ID}/p-${PROJECT_ID}/
+
+# 3. Symlink node_modules (evita duplicar 211 MB)
+ln -s /opt/mitra-factory/template/node_modules /opt/mitra-factory/workspaces/w-${WORKSPACE_ID}/p-${PROJECT_ID}/frontend/node_modules
+```
+
+Resultado: você tem `workspaces/w-{wsId}/p-{pjId}/frontend/` com o template completo (incluindo `Chart.tsx`, `ui/*`, `lib/*`) pronto pra modificar.
+
+### 3.3. Quando usar pullFromS3Mitra
+
+`pullFromS3Mitra` é pra **recuperar** projetos **existentes e já deployados**, não pra setup inicial. Casos de uso:
+
+- **Recovery**: o working dir foi perdido ou corrompido e você precisa reconstruir a partir do último deploy que foi pro S3
+- **Engenharia reversa**: você precisa entender como um sistema em prod foi construído
+
+Fluxo de recovery:
 
 ```javascript
-import { configureSdkMitra, createProjectMitra, pullFromS3Mitra } from 'mitra-sdk';
+import { configureSdkMitra, pullFromS3Mitra } from 'mitra-sdk';
 import fs from 'fs';
 import { execSync } from 'child_process';
 
 configureSdkMitra({ baseURL, token, integrationURL });
 
-// 1. Criar o projeto na plataforma (template é populado automaticamente no S3 do projeto)
-const project = await createProjectMitra({ name, workspaceId });
-
-// 2. Pull do template + arquivos do projeto pra pasta local
-const buf = await pullFromS3Mitra({ projectId: project.id, workspaceId });
+const blob = await pullFromS3Mitra({ projectId, workspaceId });
+const buf = Buffer.from(await blob.arrayBuffer());
 fs.writeFileSync('/tmp/pull.tar.gz', buf);
-execSync(`mkdir -p workspaces/w-${workspaceId}/p-${project.id} && tar -xzf /tmp/pull.tar.gz -C workspaces/w-${workspaceId}/p-${project.id}`);
+
+const workDir = `/opt/mitra-factory/workspaces/w-${workspaceId}/p-${projectId}`;
+execSync(`mkdir -p ${workDir} && tar -xzf /tmp/pull.tar.gz -C ${workDir}`);
 ```
 
-Resultado: você tem `workspaces/w-{wsId}/p-{pjId}/src/frontend/` com o template completo (incluindo `Chart.tsx`, `ui/*`, `lib/*`, etc.) pronto pra você modificar.
+O tar do S3 tem estrutura `src/frontend/` + `output/` (porque é o mesmo formato que o `deployToS3Mitra` sobe). Pra projeto novo que nunca foi deployado, o pull vem com um tar.gz quase vazio (~29 bytes) — **não serve pra setup inicial**.
 
 ### 3.3. Logos Mitra (copiar dos assets oficiais)
 
