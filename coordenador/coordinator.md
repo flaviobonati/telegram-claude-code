@@ -342,6 +342,56 @@ Quando o output está OK, eu envio ao Usuário um resumo executivo (incumbente, 
 
 ## 11. Dev: o que eu cobro
 
+### 11.0 Montando o ambiente do Dev ANTES de spawnar (inviolável)
+
+Antes de spawnar qualquer Dev, **eu monto o ambiente dele** — o Dev não deve criar pasta, não deve navegar pra workspace nenhum, não deve pensar em onde está. Deve nascer num lugar limpo, com tudo que precisa já pronto. Regras:
+
+#### Caso A — Sistema novo (one-shot do zero)
+
+1. **Crio o projeto Mitra novo** no DEV_WORKSPACE via `createProjectMitra`, guardo o `projectId` retornado.
+2. **Crio a pasta de trabalho limpa**: `mkdir -p /opt/mitra-factory/workspaces/w-{DEV_WORKSPACE_ID}/p-{projectId}/{frontend,backend}`.
+3. **Copio os logos oficiais** de `/opt/mitra-factory/assets/*.svg` pra `frontend/public/` (pra o Dev não gerar SVG genérico).
+4. **Crio o `backend/.env`** com valores corretos e SEM ambiguidade:
+   ```
+   MITRA_PROJECT_ID={projectId}
+   MITRA_WORKSPACE_ID={DEV_WORKSPACE_ID}
+   MITRA_BASE_URL=https://newmitra.mitrasheet.com:8080
+   MITRA_BASE_URL_INTEGRATIONS=https://newmitra.mitrasheet.com:8080
+   MITRA_TOKEN={DEV_WORKSPACE_TOKEN}
+   ```
+5. **No prompt do Dev**, passo `EXPECTED_PROJECT_ID={projectId}` + instrução explícita de sempre `cd backend/` do projeto antes de rodar qualquer script. O Dev **nunca** roda nada da raiz da VPS.
+6. **Atualizo PIPELINE** no cérebro: `PROJETO_MITRA_ID={projectId}`, `STATUS=desenvolvimento`.
+7. Só então spawno o Dev. Ele começa scaffold Vite no diretório vazio + logos já prontos + `.env` correto.
+
+#### Caso B — Recovery / reconstrução de sistema existente (ex: fábrica perdeu SFs)
+
+Quando o sistema já existe e o Dev precisa **reconstruir algo** (SFs perdidas, schema danificado, feature quebrada), **não dou um diretório vazio** — dou o **source atual do projeto puxado via `pullFromS3Mitra`**:
+
+1. **Crio pasta de recovery isolada**: `mkdir -p /opt/mitra-factory/autonomous-factory-recovery/{frontend,backend}` (ou nome que faça sentido ao contexto).
+2. **Puxo o source atual do projeto** do S3 da plataforma:
+   ```js
+   import { pullFromS3Mitra, configureSdkMitra } from 'mitra-sdk';
+   configureSdkMitra({ baseURL, token, integrationURL });
+   const blob = await pullFromS3Mitra({ workspaceId, projectId });
+   const buf = Buffer.from(await blob.arrayBuffer());
+   fs.writeFileSync('/tmp/source.tar.gz', buf);
+   ```
+3. **Extraio o tar.gz** na pasta de recovery. Vai aparecer `src/` com o código TypeScript/React atual (pages, components, lib, types, sf mapping), tal como foi deployado por último.
+4. **Crio o `backend/.env`** apontando pro projeto certo e com `EXPECTED_PROJECT_ID` inline na instrução de execução.
+5. No prompt do Dev, aponto explicitamente pra pasta de recovery + passo a instrução "**leia o source**" em vez de "infira do bundle".
+6. Spawno o Dev. Ele lê os arquivos TS legíveis — `sf.ts` com mapa de SFs, `types.ts` com shapes de retorno, `pages/*.tsx` com uso real de cada SF — e faz engenharia reversa precisa, não chute.
+
+#### Por que a diferença importa
+
+- **Sistema novo (Caso A)**: o Dev cria do zero. Não faz sentido puxar source — não há source anterior. Scaffold Vite + briefing + spec = tudo que ele precisa.
+- **Recovery (Caso B)**: o bundle minificado em produção preserva strings literais (nomes de SFs aparecem) mas destrói interfaces, nomes de variáveis, estrutura de pages. Engenharia reversa a partir do bundle gera aproximações ruidosas; a partir do source TypeScript original, gera reconstruções exatas. Use `pullFromS3Mitra` sempre que precisar **espelhar o estado atual** de um sistema que já existe.
+
+#### Nunca deixe o Dev "achar" onde está
+- Nunca spawne o Dev sem ele saber o `projectId`, o `workspaceId`, a pasta de trabalho absoluta, e o caminho do `.env`.
+- Nunca spawne com instrução vaga tipo "cria um projeto novo" — eu crio antes e passo o ID pronto.
+- Nunca deixe a pasta ter "sobras" de projeto antigo. Caso A = vazio. Caso B = source puxado do S3.
+- Nunca rode `dotenv/config` sem garantir o CWD correto. Guarda `EXPECTED_PROJECT_ID` aborta o script se alguém rodar da pasta errada.
+
 ### 11.1 O que vai no prompt do Dev
 
 1. `developer.md` (system prompt da plataforma Mitra — **não mexer**, vem de outro git)
@@ -652,7 +702,9 @@ Sempre. Ver seção 13.5.
 import { configureSdkMitra, runQueryMitra, runDmlMitra, runDdlMitra,
          createRecordMitra, updateRecordMitra, patchRecordMitra,
          listRecordsMitra, listServerFunctionsMitra, executeServerFunctionMitra,
-         togglePublicExecutionMitra, createProjectMitra, deployToS3Mitra } from 'mitra-sdk';
+         togglePublicExecutionMitra, createProjectMitra, deployToS3Mitra,
+         pullFromS3Mitra, createServerFunctionMitra, readServerFunctionMitra,
+         updateServerFunctionMitra, deleteServerFunctionMitra } from 'mitra-sdk';
 
 configureSdkMitra({ baseURL, token, integrationURL });
 
@@ -696,8 +748,23 @@ const p = await createProjectMitra({ workspaceId: DEV_WORKSPACE_ID, name, descri
 // Depois, voltar pro token da fábrica pra continuar escrevendo no cérebro
 configureSdkMitra({ baseURL, token: FACTORY_TOKEN, integrationURL });
 
-// Deploy
+// Deploy (push: envia o tar com src/ + output/ para o S3 do projeto)
 await deployToS3Mitra({ workspaceId, projectId, file: tarBlob });
+
+// Pull (inverso: puxa o source atual do projeto do S3)
+// Útil pra recovery — o Dev precisa espelhar o estado atual antes de reconstruir
+const blob = await pullFromS3Mitra({ workspaceId, projectId });
+const buf = Buffer.from(await blob.arrayBuffer());
+fs.writeFileSync('/tmp/source.tar.gz', buf);
+// Depois: mkdir pasta + tar xzf tar.gz → src/ com o TypeScript legível
+// (pages, components, lib/sf.ts, lib/types.ts). O Dev lê isso em vez de
+// tentar inferir do bundle minificado.
+
+// SF lifecycle (recovery / manutenção)
+await createServerFunctionMitra({ projectId, name: 'listarX', type: 'SQL', sqlCode: '...', parameters: [...] });
+const body = await readServerFunctionMitra({ projectId, serverFunctionId: id });
+await updateServerFunctionMitra({ projectId, serverFunctionId: id, sqlCode: '...' });
+await deleteServerFunctionMitra({ projectId, serverFunctionId: id });
 ```
 
 ### 17.1 Quirks a lembrar
@@ -708,6 +775,8 @@ await deployToS3Mitra({ workspaceId, projectId, file: tarBlob });
 - `createProjectMitra` exige reconfigurar o SDK com o token do workspace de destino antes da chamada.
 - `uploadFilePublicMitra` usa `new File([buf], filename, {type})`, não `new Blob([buf])` — Blob ignora nome.
 - Tokens: `Bearer {token}` quando o SDK pedir string completa.
+- `pullFromS3Mitra` retorna um `Blob` — use `Buffer.from(await blob.arrayBuffer())` pra escrever em disco. O tar contém `src/` com o TypeScript legível do projeto atual (o que foi deployado por último via `deployToS3Mitra`).
+- `createServerFunctionMitra` retorna o novo SF com `id` auto-gerado (auto-increment do projeto). **Você não controla o valor do ID**. Se o frontend usa IDs hardcoded (ex: `sf.ts` com `listarPipeline: 1`), precisa coletar os IDs reais pós-criação, editar o source, rebuildar e redeployar o frontend.
 
 ---
 
