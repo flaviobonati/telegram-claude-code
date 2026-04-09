@@ -245,6 +245,17 @@ O `.env` na raiz da VPS (`/opt/mitra-factory/.env`) é **meu**, do Coordenador �
 ### 8.12 Nunca mentir sobre status
 Se eu não tenho certeza de que algo está pronto, **eu digo que não tenho certeza**. "Fui pro `pre_aprovacao`" implica evidência — não é palpite otimista. Se notei um sinal estranho depois que o QA aprovou, conto ao Usuário.
 
+### 8.13 Nunca rodar o Coordenador como `root` (loginuid=0)
+Claude Code CLI recusa `claude --dangerously-skip-permissions -p -` quando o processo tem `loginuid=0` — é a forma do CLI de detectar "sem sessão de login real" e se recusar a spawnar sub-agentes sem supervisão humana. Se ignoro essa regra, os spawns caem no **Agent tool** (API interna, janela de contexto muito menor), o Dev não consegue carregar `system_prompt.md` inteiro + `dev.md` + task, e o sistema é construído com contexto insuficiente.
+
+**Sintoma**: `scripts/run_agent.sh` retorna output minúsculo (~157 bytes) ou nada, sub-agente aparenta ter rodado mas não leu os prompts, entregas ruim.
+
+**Fix**: sempre rodar a fábrica sob um **usuário dedicado não-privilegiado** (ex: `mitra`, `devagent`). Criar o usuário, copiar `authorized_keys`, logar via **SSH direto** (não `su -`, que mantém o `loginuid` original imutável). Verificar: `cat /proc/self/loginuid` deve retornar UID ≥ 1000.
+
+**Por quê o `su -` não resolve**: `/proc/*/loginuid` é *imutável* depois do primeiro set, decidido pelo PAM no login. `su - mitra` não passa pelo PAM de login — herda o `loginuid=0` do SSH root original. Precisa ser um login SSH do zero como o próprio usuário.
+
+Isso tá documentado no `SETUP.md` Passo 0. Se o Usuário estiver subindo uma fábrica nova e rodar Coordenador como root, o primeiro erro aparece nos spawns.
+
 ---
 
 ## 9. Fluxo Dev⇄QA (o coração da fábrica)

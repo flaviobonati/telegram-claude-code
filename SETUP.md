@@ -13,6 +13,34 @@ Este guia liga a fábrica numa VPS Linux limpa. Após esses passos, você terá 
 - **Tokens do Mitra** (base URL + workspace token)
 - **Token do Telegram** (opcional — só se quiser notificações no celular)
 
+> ⚠️ **NUNCA rode o Coordenador como `root`.** Claude Code CLI recusa a spawnar sub-agentes quando o processo tem `loginuid=0` (checagem de segurança do próprio CLI — se não houver sessão de login "real", o spawn via `claude -p` falha silenciosamente ou cai pro Agent tool com contexto muito menor, que **não** cabe o `system_prompt.md` oficial do Mitra + `dev.md` + task). Sempre use um **usuário dedicado não-privilegiado** (ex: `mitra`, `devagent`). Ver "Passo 0" abaixo.
+
+## Passo 0 — Criar usuário dedicado (obrigatório se você está como root)
+
+Se você tá logado como `root` na VPS nova, crie um usuário só pra fábrica e faça login nele via SSH direto (não `su -`, que mantém `loginuid=0` do login original):
+
+```bash
+# Como root (ou sudo)
+adduser mitra                                      # pode ser qualquer nome — vou chamar de "mitra"
+usermod -aG sudo mitra                             # opcional, pra ele conseguir instalar pacotes globais
+mkdir -p /home/mitra/.ssh
+cp ~/.ssh/authorized_keys /home/mitra/.ssh/
+chown -R mitra:mitra /home/mitra/.ssh
+chmod 700 /home/mitra/.ssh
+chmod 600 /home/mitra/.ssh/authorized_keys
+
+# Saia do SSH como root e RELOGUE como mitra:
+exit
+ssh mitra@SUA-VPS
+
+# Verifique que loginuid NÃO é 0 (deve ser o UID do mitra, tipicamente 1000+):
+cat /proc/self/loginuid
+```
+
+**Importante**: `su - mitra` a partir do root NÃO resolve — o `loginuid` é herdado do primeiro login. Você **precisa** logar via SSH direto como `mitra` pra ter um `loginuid` correto. Isso é uma limitação do kernel Linux (`/proc/*/loginuid` é imutável após set). Claude Code verifica isso e recusa rodar `claude --dangerously-skip-permissions -p -` se `loginuid=0`, porque esse é o marcador de "sem sessão de login real".
+
+> **Sintoma do bug**: se você ignorar esse passo, o Coordenador vai conseguir spawnar sub-agentes mas eles vão cair no **Agent tool** (API) em vez do **CLI** (`claude -p`). Agent tool tem janela de contexto muito menor — o Dev não consegue ler o `system_prompt.md` inteiro (2726 linhas), e o sistema acaba sendo construído com contexto insuficiente.
+
 ## Passo 1 — Clonar o repo no local canônico
 
 A fábrica assume que todos os paths absolutos começam em `/opt/mitra-factory/`. O jeito mais simples é clonar o repo direto nesse caminho:
@@ -175,12 +203,15 @@ Se ele responder com uma lista de pipelines (mesmo que vazia numa VPS nova), o C
 
 | Problema | Causa provável | Fix |
 |---|---|---|
-| `ECONNREFUSED` ao chamar SDK | Token errado ou `MITRA_BASE_URL` incorreto | Verificar `.env` |
+| Dev spawnado cai no **Agent tool** em vez do CLI, contexto minúsculo, não consegue ler `system_prompt.md` inteiro | Coordenador rodando como `root` (`loginuid=0`) — Claude Code CLI recusa `claude -p` sem sessão de login real | Ver **Passo 0** — criar usuário dedicado e logar via SSH direto (`su -` não resolve). Verificar: `cat /proc/self/loginuid` deve retornar UID >= 1000, nunca 0 |
+| `claude -p` falha silenciosamente ou retorna output ~157 bytes | Mesma causa: `loginuid=0` OU escape hell no prompt inline | 1. Verificar `cat /proc/self/loginuid`. 2. Sempre usar `scripts/run_agent.sh` que lê prompt via stdin (`-p -`), nunca inline |
+| `ECONNREFUSED` ao chamar SDK | Token errado ou `MITRA_BASE_URL` incorreto | Verificar `.env.coordinator` |
 | `Cannot find module 'mitra-sdk'` | Esqueceu de rodar `npm install` no `mitra-agent-minimal/template/backend/` | Rodar |
 | `Cannot find module 'recharts'` no build | Esqueceu de rodar `npm install` no `mitra-agent-minimal/template/frontend/` | Rodar |
 | Claude não lê `coordinator.md` | Permissões ou CWD errado | `cd /opt/mitra-factory && claude` |
 | Playwright abre chromium mas crasha | Dependências do sistema faltando | `sudo npx playwright install-deps chromium` |
 | `scripts/sync-mitra-agent-minimal.sh` 401 | `GH_TOKEN` sem acesso ao repo privado | Gerar novo token com escopo `repo` |
+| `Data too long for column 'SYSTEM_PROMPT'` ao atualizar tabela `AGENTES` do cérebro | Coluna criada como `TEXT` (65535 bytes), mas `coordinator.md` atual tem 68k+ bytes | `ALTER TABLE AGENTES MODIFY COLUMN SYSTEM_PROMPT LONGTEXT` (já feito na fábrica de referência — adicionar ao schema ao criar o cérebro) |
 
 ## Arquitetura em uma linha
 
