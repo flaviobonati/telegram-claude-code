@@ -1,0 +1,221 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════
+   PALETA DO PROJETO — O agente DEVE personalizar estas variáveis
+   para cada projeto. Escolha cores coerentes com o domínio.
+   ═══════════════════════════════════════════════════════ */
+:root {
+  /* ── Cor principal ── */
+  --color-primary: #60a5fa;       /* blue-400 — cor principal (brilha no escuro) */
+  --color-primary-hover: #3b82f6; /* blue-500 — hover/active */
+  --color-primary-light: #93c5fd; /* blue-300 — focus ring */
+  --color-primary-bg: #1e3a5f;    /* blue-900 com tom — fundos suaves */
+
+  /* ── Superfícies ── */
+  --color-bg: #0f1117;            /* fundo geral da página — quase preto */
+  --color-surface: #1a1d27;       /* cards, modais — cinza escuro */
+  --color-nav: #141620;           /* fundo da navegação (sidebar) */
+  --color-nav-text: #94a3b8;      /* texto da navegação — slate-400 */
+  --color-nav-active: #60a5fa;    /* item ativo da nav */
+  --color-nav-hover: #1e2230;     /* hover em itens da nav */
+  --color-border: #2a2d3a;        /* bordas gerais — sutil */
+
+  /* ── Texto ── */
+  --color-text: #f1f5f9;          /* texto principal — quase branco */
+  --color-text-secondary: #94a3b8; /* texto secundário — slate-400 */
+
+  /* ── Finanças ── */
+  --color-receita: #34d399;       /* emerald-400 */
+  --color-despesa: #f87171;       /* red-400 */
+  --color-saldo-pos: #34d399;
+  --color-saldo-neg: #f87171;
+  --color-pendente: #fbbf24;      /* amber-400 */
+  --color-atrasado: #f87171;
+  --color-pago: #34d399;
+
+  /* ── Cores auxiliares para componentes ── */
+  --color-tick: #94a3b8;         /* cor dos ticks/labels nos eixos */
+  --color-label-muted: #94a3b8;  /* labels secundários em charts */
+  --color-label-strong: #5D6585; /* labels normais em bar tops */
+  --color-breadcrumb: #6366f1;   /* links do breadcrumb */
+  --color-breadcrumb-active: #e2e8f0; /* breadcrumb item ativo (texto) */
+  --color-drill-hover: rgba(99, 102, 241, 0.08); /* hover no context menu */
+  --color-drill-text: #e2e8f0;   /* texto no context menu */
+
+  /* ── KPI icon backgrounds (dark mode: saturados escuros) ── */
+  --kpi-bg-green: #0d2818;
+  --kpi-bg-blue: #1a1a3e;
+  --kpi-bg-cyan: #0c2d3e;
+  --kpi-bg-amber: #2a2008;
+  --kpi-bg-purple: #1e1040;
+
+  /* ── Chart colors — OKLCH (shadcn pattern, mais vibrantes) ── */
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --chart-6: oklch(0.696 0.17 162.48);
+  --chart-7: oklch(0.656 0.241 354.308);
+  --chart-8: oklch(0.702 0.191 22.216);
+}
+
+/* ══════════════════════════════════════════════════════════
+   TEMA CLARO — aplique classe .theme-light no wrapper
+   ══════════════════════════════════════════════════════════ */
+.theme-light {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #60a5fa;
+  --color-primary-bg: #eff6ff;
+
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-nav: #ffffff;
+  --color-nav-text: #64748b;
+  --color-nav-active: #2563eb;
+  --color-nav-hover: #f1f5f9;
+  --color-border: #e2e8f0;
+
+  --color-text: #0f172a;
+  --color-text-secondary: #64748b;
+
+  --color-receita: #16a34a;
+  --color-despesa: #dc2626;
+  --color-saldo-pos: #16a34a;
+  --color-saldo-neg: #dc2626;
+  --color-pendente: #d97706;
+  --color-atrasado: #dc2626;
+  --color-pago: #16a34a;
+
+  --color-tick: #64748b;
+  --color-label-muted: #64748b;
+  --color-label-strong: #475569;
+  --color-breadcrumb: #4f46e5;
+  --color-breadcrumb-active: #1e293b;
+  --color-drill-hover: #f0f4ff;
+  --color-drill-text: #344054;
+
+  --kpi-bg-green: #f0fdf4;
+  --kpi-bg-blue: #eff6ff;
+  --kpi-bg-cyan: #ecfeff;
+  --kpi-bg-amber: #fffbeb;
+  --kpi-bg-purple: #f5f3ff;
+
+  --chart-1: oklch(0.586 0.222 41.116);
+  --chart-2: oklch(0.55 0.118 184.704);
+  --chart-3: oklch(0.45 0.07 227.392);
+  --chart-4: oklch(0.75 0.15 84.429);
+  --chart-5: oklch(0.65 0.16 70.08);
+  --chart-6: oklch(0.6 0.15 162.48);
+  --chart-7: oklch(0.58 0.2 354.308);
+  --chart-8: oklch(0.62 0.17 22.216);
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  @apply antialiased;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background-color: var(--color-bg); }
+::-webkit-scrollbar-thumb { background-color: var(--color-border); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--color-text-secondary); }
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-fadeIn { animation: fadeIn 0.2s ease-out; }
+.animate-scaleIn { animation: scaleIn 0.2s ease-out; }
+.animate-slideIn { animation: slideIn 0.3s ease-out; }
+
+/* ── Utility class for chart labels (shadcn pattern) ── */
+.fill-foreground { fill: var(--color-text); }
+
+/* ── Recharts: Eixos — garantir que ticks e axis labels apareçam ── */
+/* TW4 Preflight reseta `border: 0 solid` em `*` e `display: block` em `svg`.
+   Isso pode quebrar elementos SVG internos do Recharts. Override necessário: */
+.recharts-wrapper text,
+.recharts-wrapper tspan {
+  fill: var(--color-tick);
+  font-size: 12px;
+  border: initial;
+}
+.recharts-xAxis,
+.recharts-yAxis,
+.recharts-cartesian-axis {
+  visibility: visible !important;
+  display: initial !important;
+}
+.recharts-cartesian-axis-tick {
+  visibility: visible !important;
+}
+.recharts-cartesian-axis-tick text,
+.recharts-cartesian-axis-tick-value {
+  fill: var(--color-tick) !important;
+  font-size: 12px;
+  visibility: visible !important;
+}
+.recharts-cartesian-axis-line {
+  stroke: var(--color-border) !important;
+}
+
+/* ── Recharts: NUNCA borda/outline preta em nenhum chart ── */
+/* SVG container — matar focus ring do accessibilityLayer */
+.recharts-wrapper,
+.recharts-wrapper svg,
+.recharts-wrapper svg:focus,
+.recharts-wrapper svg:focus-visible,
+.recharts-wrapper svg:active,
+.recharts-surface,
+.recharts-surface:focus,
+.recharts-surface:focus-visible {
+  outline: none !important;
+  border: none !important;
+}
+/* Barras — nunca stroke/outline */
+.recharts-bar-rectangle path,
+.recharts-bar-rectangle rect,
+.recharts-active-bar path,
+.recharts-active-bar rect,
+.recharts-rectangle {
+  stroke: none !important;
+  outline: none !important;
+}
+.recharts-bar-rectangle,
+.recharts-bar-rectangle:focus,
+.recharts-bar-rectangle:active,
+.recharts-bar-rectangle:focus-visible,
+.recharts-active-bar,
+.recharts-active-bar:focus,
+.recharts-active-bar:active,
+.recharts-active-bar:focus-visible {
+  outline: none !important;
+}
+/* Pie — sem stroke, sem outline */
+.recharts-pie-sector,
+.recharts-pie-sector:focus,
+.recharts-pie-sector:active,
+.recharts-pie-sector:focus-visible,
+.recharts-pie-sector g {
+  outline: none !important;
+  stroke: none !important;
+}
+.recharts-pie-sector path {
+  stroke: none !important;
+  stroke-width: 0 !important;
+}
