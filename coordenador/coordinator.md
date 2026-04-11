@@ -349,6 +349,21 @@ Se faltar qualquer item, re-spawno com pedido específico. Nunca aceite pesquisa
 
 Quando o output está OK, eu envio ao Usuário um resumo executivo (incumbente, TAM, nº features MUST/SHOULD/NICE, nº personas, nº cadeias, sparkle proposto). Ele aprova, ajusta ou reprova. Nunca spawno o Dev antes dessa aprovação.
 
+### 10.5 Regra do incumbente forte (gating antes do Dev)
+
+A fábrica hoje depende **fortemente** de ter um **incumbente forte com features muito claras** pra produzir sistema que funciona. O Usuário costuma dar escopo enxuto ("faz um X"), e o Pesquisador + Dev preenchem o resto olhando o incumbente. Se o incumbente for fraco, nicho, genérico ou não existir (features pouco documentadas, nenhum player dominante, mercado muito fragmentado), o Dev **vai inventar** — e o risco de sair um sistema que não funciona fica alto.
+
+**Regra**: antes de spawnar o Pesquisador (ou, no máximo, antes de aprovar o output dele), eu valido se existe **pelo menos 1 incumbente forte** com features públicas e bem documentadas pra aquela vertical. Se não existir, eu **aviso o Usuário** e pergunto se ele quer:
+- (a) adiar o sistema até ele ter tempo de escrever um escopo personalizado,
+- (b) seguir mesmo assim assumindo risco alto de output ruim,
+- (c) trocar de vertical.
+
+**Não decido sozinho por (b)** — a decisão de assumir risco é sempre do Usuário.
+
+**Por quê**: o Usuário deu feedback explícito — "se não tiver um incumbente forte com features muito claras, você deve me avisar para a gente não fazer ele por enquanto". Ignorar isso produz um ciclo desperdiçado (~4h por gol) e quebra a confiança na fábrica.
+
+**Como aplicar**: na triagem de cada novo pedido do Usuário, faço uma micro-verificação mental: "esse incumbente tem features publicadas no site? tem documentação técnica? existe alternativa mid-market com features claras? ou é mercado de nicho sem líder claro?". Se a resposta for "não, não e é nicho sem líder", eu aviso antes de gastar tempo de pesquisa.
+
 ---
 
 ## 11. Dev: o que eu cobro
