@@ -927,6 +927,43 @@ Esta seção registra **como o processo evoluiu** e **por que cada componente ex
 
 **O que eu nunca faço**: aceitar 9.9 como aprovado, mandar bug parcial pro Dev, rodar QA sem Playwright, escalar pro Usuário por "dificuldade".
 
+### 19.5 Aprendizados da sessão 2026-04-11/12
+
+- **PULL FROM S3 OBRIGATÓRIO antes de mexer em frontend existente**: NUNCA editar source local e deployar sem fazer `pullFromS3Mitra` primeiro pra pegar a versão mais recente. Perdi TODO o trabalho anterior do frontend AF por não ter feito pull. Regra inviolável: `pullFromS3Mitra({workspaceId, projectId, outputDir})` → extrair → editar → build → deploy. Sem exceção.
+- **Devs negligenciam frontend básico**: padrão repetido em 5+ sistemas — backend perfeito (SFs SQL, anti-mentira PASS, seed robusto) mas frontend incompleto (CRUDs ausentes, RBAC inexistente, logout missing, Vite base './' em vez de '/', window.confirm nativos, Chart wrapper ausente, dark/light ausente). Solução: colocar CHECKLIST FRONTEND OBRIGATÓRIO no TOPO do briefing Dev (antes das cadeias).
+- **Nunca podar features MUST**: Flávio rejeita qualquer recorte de MUST pra simplificar Dev. Completude > enxutez. Várias rodadas Dev são OK — mas TODOS os MUST entram.
+- **Nomenclatura obrigatória**: sempre "Mitra + nome do produto em português" (Mitra CRM, Mitra Ordem de Serviço, etc). Ao renomear PIPELINE.NOME, também atualizar FEATURES.VERTICAL.
+- **SF IDs da AF (projeto 45173)**: são 665-699+, NÃO 1-19. O sf.ts do frontend tem o mapeamento. Ao criar SFs novas na AF, anotar o ID e atualizar sf.ts.
+- **TEXT fields grandes quebram SFs da plataforma**: SELECT com campos TEXT >10K chars pode retornar 0 rows silenciosamente. Usar SUBSTRING(campo, 1, 10000) em SFs que retornam campos grandes.
+- **Ação destrutiva = confirmação literal**: NUNCA deletar projetos, dropar tabelas, sobrescrever deploys sem confirmar com o Usuário primeiro. Nasceu do incidente de deleção do Financial Close.
+- **Silent death dos subprocesses**: claude CLI com output grande pode truncar stdout a 1 byte. Workaround: Dev/QA escrevem relatório via Write tool (guaranteed flush) antes de imprimir stdout.
+
+### 19.6 Re-Round (Processo de Production-Grade)
+
+O Re-Round é o **retoque final** da fábrica. Transforma sistema 10/10/10/10 (demo-grade) em production-grade. É processo padrão, não one-off.
+
+**Princípio**: "Não expandir o produto — garantir que o core funciona 100% e está pronto pra implantação oficial." (Flávio, 2026-04-12)
+
+**3 fases**:
+
+1. **Re-Pesquisador** (prompt em `prompts/reround_researcher.md`): Volta ao INCUMBENTE PRINCIPAL do sistema (campo INCUMBENTE_PRINCIPAL na PIPELINE), lista TODAS as jornadas end-to-end que o incumbente faz, TESTA cada uma no nosso sistema via Playwright+SDK, identifica gaps. Output: relatório side-by-side (incumbente vs nosso) + % produção + gaps rankeados.
+2. **Dev Hardening**: Recebe gaps, corrige SEM adicionar features novas. Só fecha buracos vs incumbente.
+3. **QA Production-Grade**: Simula implantação real do zero — como se fosse consultor de implantação do incumbente.
+
+**Regra chave**: Cada sistema tem 1 INCUMBENTE PRINCIPAL (campo no PIPELINE) definido pelo Usuário. O Re-Round é ancorado nesse incumbente. Sempre perguntar ao Usuário qual incumbente antes de rodar.
+
+**Incumbentes confirmados pelo Usuário**:
+- ERP Core → Sankhya
+- Help Desk → Zendesk
+- CRM → RD Station
+- B2B → Mercos
+- Controle Orçamentário → Accountfy
+- FP&A → Pigment
+- OS Core → Auvo + Tractian (caso especial: 2 incumbentes)
+- ITSM → ServiceNow
+- Reconciliação Bancária → BlackLine (sugestão Coordenador, a confirmar)
+- Auditoria Concessionárias → Involves (sugestão Coordenador, a confirmar)
+
 ---
 
 ## 20. Filosofia: Inteligência, Autonomia, Economia
