@@ -15,12 +15,23 @@
 
 set -euo pipefail
 
-PROMPT_FILE="${1:?usage: run_agent.sh <prompt_file> <output_file>}"
-OUTPUT_FILE="${2:?usage: run_agent.sh <prompt_file> <output_file>}"
+PROMPT_FILE="${1:?usage: run_agent.sh <prompt_file> <output_file> [timeout_minutes]}"
+OUTPUT_FILE="${2:?usage: run_agent.sh <prompt_file> <output_file> [timeout_minutes]}"
+TIMEOUT_MIN="${3:-25}"  # default 25 minutos
 
 if [ ! -f "$PROMPT_FILE" ]; then
   echo "ERRO: prompt file '$PROMPT_FILE' nao existe" >&2
   exit 1
 fi
 
-claude --dangerously-skip-permissions -p - < "$PROMPT_FILE" > "$OUTPUT_FILE" 2>&1
+# timeout previne agentes que ficam stuck indefinidamente (incidente HD Re-Round 2026-04-12)
+# Se o agente nao terminar em TIMEOUT_MIN minutos, eh morto com SIGTERM
+timeout --signal=SIGTERM "${TIMEOUT_MIN}m" claude --dangerously-skip-permissions -p - < "$PROMPT_FILE" > "$OUTPUT_FILE" 2>&1
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -eq 124 ]; then
+  echo "" >> "$OUTPUT_FILE"
+  echo "=== TIMEOUT: agente morto apos ${TIMEOUT_MIN} minutos sem concluir ===" >> "$OUTPUT_FILE"
+fi
+
+exit $EXIT_CODE
