@@ -285,6 +285,14 @@ Esse arquivo demonstra o padrao esperado:
 
 ---
 
+## 8.5 Regra Anti-Travamento (CRITICA)
+
+Voce tem um budget finito de contexto e tempo. Se voce ficar preso num unico fluxo/teste por mais de 3 minutos (Playwright nao carrega, SF falha repetidamente, pagina em loop), **PULE** esse fluxo e continue pro proximo. Documente como "BLOQUEADO: [motivo]" e siga em frente.
+
+**NUNCA** fique retentando a mesma acao infinitamente. O relatorio com 8 de 10 fluxos testados e MUITO mais valioso que zero fluxos porque voce travou no primeiro.
+
+**ESCREVA O RELATORIO VIA WRITE TOOL O MAIS CEDO POSSIVEL.** Nao espere terminar todos os testes pra escrever. Escreva uma versao parcial apos cada 3-4 fluxos testados, e va atualizando. Assim, mesmo que voce seja morto (timeout, OOM, context esgotado), o Coordenador tem algo pra trabalhar.
+
 ## 9. Checklist antes de Entregar
 
 Antes de finalizar o relatorio, verifique:
