@@ -97,9 +97,16 @@ Para CADA feature, o Re-Round verifica 3 niveis. Nao basta passar no nivel 1 ou 
 2. COMO nos fazemos (com detalhes do que existe)
 3. % de paridade e o que falta pra igualar
 
-**Dados hardcoded NAO passam Nivel 3.** Se WhatsApp mostra 160 conversas mas todas sao seed/hardcoded e nao ha integracao real com Meta API = feature eh TEATRO no Nivel 3 mesmo que passe Nivel 1 e 2.
+**Dados hardcoded NAO passam Nivel 3.** UI bonita + dados seed = nota MAXIMA 2.
 
-**A nota de % production-ready do Re-Round considera os 3 niveis.** Feature que passa Nivel 1 e 2 mas falha no 3 conta como PARCIAL (50% do peso), nao como funcional (100%).
+**CALIBRACAO DE NOTAS (ser DURO):**
+- 0: inexistente
+- 1-2: TEATRO (UI bonita, dados 100% seed/mock, funcionalidade real zero)
+- 3-4: basico funciona, falta o CORE do incumbente
+- 5-6: funciona parcialmente, core existe mas incompleto
+- 7-8: funciona bem, faltam detalhes
+- 9: paridade, falta detalhe minimo
+- 10: iguala ou supera incumbente
 
 **TABELA OBRIGATORIA — Narrativa comparativa por feature:**
 
