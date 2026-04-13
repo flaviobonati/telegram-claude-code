@@ -486,7 +486,7 @@ O `system_prompt.md` da plataforma Mitra **não** é concatenado ao prompt (é l
 - **`ProtectedRoute` RBAC** cobrindo todas as rotas com mapa por perfil.
 - **Botão "Carregar Dados de Exemplo"** em cada tela de import/wizard. Popula dados em 1 clique, sem depender de CSV do Usuário.
 - **Dados pré-populados** via `setup-backend.mjs` (personas, tabelas principais, algumas linhas de cada cadeia pra o sistema não estar vazio no primeiro login).
-- **Workers NÃO** na primeira leva. Documentar em comentário "implementar via construtor nativo do Mitra pós-MVP".
+- **Workers (agentes autônomos background) NÃO** na primeira leva. Documentar em comentário "implementar via construtor nativo do Mitra pós-MVP". **MAS**: integrações (chamadas HTTP a APIs externas como Open Banking, Stripe, etc.) e funcionalidades determinísticas (cálculos, projeções, scoring) NÃO são workers — o Dev DEVE implementar via SFs tipo INTEGRATION ou SQL/JAVASCRIPT. A distinção: worker = processo que roda SOZINHO sem ação do usuário (cron, scheduler). Integração/cálculo = roda quando o usuário clica um botão.
 - **Smoke test backend via SDK** (`listServerFunctionsMitra`, `executeServerFunctionMitra`, `runQueryMitra`). Dev **não usa Playwright**.
 - **Scripts de setup sempre com guarda `EXPECTED_PROJECT_ID`** (princípio 8.8).
 - **Guia do Testador** no output final: passo a passo de implantação click-a-click + como disparar cada cadeia + jornada de cada persona + como usar o botão "Carregar Dados de Exemplo" + onde está o sparkle.

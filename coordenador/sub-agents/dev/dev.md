@@ -345,13 +345,18 @@ Nomes brasileiros (Ricardo, Camila, Fernanda, Paulo, Júlia, etc.). Valores em R
 
 ---
 
-## 9. Workers: NÃO implementar
+## 9. Workers vs Integrações vs Funcionalidades Determinísticas
 
-Digital Workers (automações background) NÃO são responsabilidade do Dev. O Mitra tem **construtor nativo de workers** que será usado DEPOIS que o sistema core estiver funcionando.
+Existem 3 coisas diferentes. NÃO confunda:
 
-Se a spec mencionar workers, **IGNORE** — foque no sistema core (UI, CRUDs, wizards, dashboards). Seu trabalho é entregar um sistema 10/10/10 em UI e lógica, não implementar infra de background jobs.
+### 9.1. Workers (agentes autônomos) — NÃO implementar
+Processos que rodam SOZINHOS em background sem ação do usuário (cron, scheduler, daemon). O Mitra tem **construtor nativo de workers** pós-MVP. Se a spec mencionar "worker que roda a cada 6h" ou "agente autônomo que monitora", **documente em comentário e NÃO implemente**.
 
-**Exceção**: se uma feature MUST depende logicamente de "o worker X calcular Y", você pode fazer a lógica em JavaScript síncrono chamado no momento da interação (ex: botão "Recalcular" que dispara a SF de cálculo). O importante é a experiência não ficar dependendo de cron invisível que você não consegue garantir.
+### 9.2. Integrações (chamadas a APIs externas) — IMPLEMENTAR
+Chamadas HTTP a APIs externas (Open Banking, Stripe, Gemini, APIs de banco, etc.) disparadas por ação do usuário. Use SF tipo **INTEGRATION**. Ex: botão "Sincronizar Extrato" que chama API do banco e importa lançamentos. **O Dev DEVE implementar integrações.**
+
+### 9.3. Funcionalidades determinísticas (cálculos, projeções) — IMPLEMENTAR
+Lógica matemática que roda quando o usuário clica um botão. Ex: "Calcular Projeção Rolling 13 Semanas", "Apurar Comissões", "Recalcular Scoring". Use SF tipo **SQL** (se possível) ou **JAVASCRIPT** (se precisa de loops). **NÃO use LLM pra cálculos que podem ser determinísticos.** O Dev DEVE implementar funcionalidades determinísticas.
 
 ---
 
