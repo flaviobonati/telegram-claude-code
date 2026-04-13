@@ -57,7 +57,7 @@ Começar em 10. Cada violação desconta:
 | 9 | Logo light/dark | `mitra-logo-light.svg` no light, `mitra-logo-dark.svg` no dark | -2 |
 | 10 | Ícones misturados | Lucide + Heroicons + emoji | -1 |
 | 11 | Favicon | Deve ser `mitra-logo-dark.svg` | -1 |
-| 12 | **Chart.tsx obrigatório** | grep bundle por "Chart" (template component). Se achar `recharts` direto sem wrapper = REPROVA automática | -5 |
+| 12 | **Chart.tsx obrigatório** | PROCEDIMENTO EXATO: (1) grep bundle por "ChartContainer" — contar. (2) grep bundle por "recharts" — contar. SE recharts > 0 E ChartContainer == 0 → DESCONTO -5 REPROVA. Sem exceção, sem WARN, sem julgamento. Nunca dar 0 desconto quando recharts está presente sem ChartContainer. | -5 |
 | 13 | **Acentuação correta** | Menus/títulos têm palavras comuns com acento (Estratégico, Relatórios, Configurações, Notificações, etc.) — verificar textContent | -3 |
 | 14 | **Dark + Light mode em CADA tela** | Toggle tema e verificar que TODAS as telas renderizam corretamente em AMBOS os modos. Screenshot obrigatório. | -3 |
 | 15 | **Controles custom (não native)** | Grep bundle por `<select>`, `<input type="date">`, `<input type="checkbox">` nativos. Deve usar componentes custom (Select.tsx, DatePicker, Checkbox.tsx). | -2 |
@@ -65,6 +65,8 @@ Começar em 10. Cada violação desconta:
 | 17 | **Datas formato BR** | Datas renderizadas como `dd/mm/aaaa`, não `yyyy-mm-dd` nem formato US | -2 |
 | 18 | **Título no header/menu** | Sistema tem NOME visível no header (ex: "Comissões — LogBrasil", "Help Desk — SuporteTech"). Se não tem, -2 | -2 |
 | 19 | **Sidebar fixa no scroll** | Scroll até o final de uma página longa (ex: `/bandeja`, `/tickets`, lista com >30 itens). Medir `sidebar.getBoundingClientRect().top` antes e depois do scroll — deve continuar ≈0 (ou próximo). Se a sidebar sumir no scroll junto com o conteúdo, REPROVA. Verificar `position: sticky` ou `h-screen overflow-y-auto` no layout. | -3 |
+| 20 | **Handsontable obrigatório para grids editáveis** | Se o sistema tem dados tabulares editáveis (orçamento, planilha, tabela de preços, comissões, etc.), DEVE usar Handsontable. Grep bundle por "handsontable" ou "HotTable". Se usa `<input>` básicos ou forms pra dados que deveriam ser planilha → REPROVA. | -5 |
+| 21 | **Cards flat (zero profundidade)** | Cards DEVEM ser flat — `border: 1px solid`, `border-radius: 8px`, ZERO `box-shadow` ou shadow mínimo (`shadow-sm`). Cards com sombra pesada, gradientes ou efeito 3D → REPROVA. Grep `boxShadow` nos cards — blur deve ser 0 ou ≤4px. | -3 |
 
 **Nota Design = max(0, 10 - soma dos descontos)**. Se < 8, REPROVA o sistema inteiro.
 

@@ -859,6 +859,9 @@ Cada linha abaixo é uma cristalização de incidente real. Leia antes de cada n
 19. **Forçar IA em sparkle**. Sparkle é UX/UI. IA só entra quando natural ao domínio, com fallback determinístico.
 20. **Anúncio prematuro de aprovação** ("sistema em `pre_aprovacao`") sem confirmar GUIAS_TESTE, HISTORICO_QA, INTERACOES e status no banco. Checo tudo antes de avisar o Usuário.
 21. **Cleanup do Dev deletando `drop all`/`delete *` em tabelas da fábrica**. Se o Dev precisa limpar algo que ele mesmo criou por engano, deletar **apenas o que ele criou naquela sessão** (comparar com snapshot inicial), nunca deletar tudo do projeto 45173. Regra: "delete só o seu, nunca o que já existia".
+22. **Spawnar QA com briefing incompleto**. O QA **precisa** de: (a) lista explícita de features MUST com contagem, (b) GUIAS_TESTE path ou conteúdo inline, (c) projectId da fábrica (45173) pra ler PIPELINE.FLUXOS_DADOS, (d) sparkle esperado, (e) instrução de medir CADA um dos 21 checks via Playwright. Sem esses 5 itens, o QA chuta notas e aprova sistema ruim. Incidente IESA 2026-04-12: QA R2 recebeu briefing de 1.2KB (só bugs + logins), deu Design 10/10 sem descontar recharts sem ChartContainer (-5), Usuário ficou furioso.
+23. **Confiar cegamente na nota do QA sem sanity check visual**. Antes de mover pra `pre_aprovacao` ou avisar o Usuário, **abrir a URL eu mesmo** e verificar se o sistema parece SaaS premium (Linear/Notion) ou template amador. Se parece template: rejeitar e re-spawnar o Dev, nunca avisar o Usuário. Incidente IESA 2026-04-12: QA aprovou 10/10/10/10, sistema era patético, Usuário ia mostrar pra cliente e ficou envergonhado.
+24. **Spawnar QA "focado" que copia notas de rounds anteriores**. NUNCA spawnar QA com instrução de "round focado". SEMPRE QA completo com 21 checks re-medidos. QA focado escreve "Nota R2 mantida" e copia resultados sem re-medir — invalida o processo inteiro.
 
 ---
 
