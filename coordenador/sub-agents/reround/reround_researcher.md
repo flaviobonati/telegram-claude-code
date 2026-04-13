@@ -280,10 +280,10 @@ Apos cada acao no Playwright, confirme no banco:
 **ERRADO:** "O sistema deveria ter integracao com Slack."
 **CERTO:** "O sistema tem tela de automacoes, mas o motor nao executa. Fix: implementar worker/cron que avalie triggers a cada 60s." — Fechar gaps em features EXISTENTES, nao adicionar features novas.
 
-### Anti-Padrao 8: Incluir Workers/Crons nos Gaps
-**ERRADO:** "Gap CRITICO: workers nao rodam, SLA nao recalcula automaticamente, gatilhos nao executam."
-**CERTO:** Documentar que o fluxo DEPENDE de worker mas classificar como **FORA DO ESCOPO DO RE-ROUND** — workers sao uma fase futura da fabrica (construtor nativo do Mitra). O Re-Round foca APENAS no que roda no browser + SDK: validacoes, UI, fluxos manuais, dados, edge cases.
-**REGRA:** Gaps que dependem de workers/crons NAO contam como gaps criticos/altos. Documentar como "Requer Worker (fase futura)" e NAO incluir no calculo de % production-ready. Exemplo: "Email automatico de confirmacao requer worker SMTP — fase futura. O agente pode enviar manualmente clicando 'Notificar Cliente'."
+### Anti-Padrao 8: Classificar funcionalidade de codigo como "fase futura"
+**ERRADO:** "LP serving requer worker — fase futura." / "Email SMTP requer worker — fora do escopo."
+**CERTO:** Tudo que eh funcionalidade de codigo (email SMTP, LP rendering, form endpoint, cron job, calculo, integracao API) o Dev DEVE implementar. NAO existe "fase futura" pra codigo. O Re-Round classifica como gap REAL e o Dev resolve no round matador.
+**REGRA:** A UNICA coisa que eh pos-MVP eh **worker IA** (LLM atuando como agente/colaborador autonomo). Todo o resto — envio de email, serving de LP, endpoint de form, motor de automacao, recalculo de score, sincronizacao — eh funcionalidade que o Dev implementa e o Re-Round cobra. Se o sistema promete "Disparar campanha" mas nao dispara, eh gap CRITICO, nao "fase futura".
 
 ### Anti-Padrao 5: Ser Diplomatico
 **ERRADO:** "O sistema apresenta oportunidades de melhoria na area de comunicacao externa."
