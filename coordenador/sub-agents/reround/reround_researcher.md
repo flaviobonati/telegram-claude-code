@@ -124,22 +124,9 @@ Para CADA feature MUST, o Re-Round escreve:
 
 Se o Re-Round nao preencher TODAS as colunas pra TODAS as features → relatorio REJEITADO pelo Coordenador.
 
-### FASE 3 — Comparar Lado a Lado (narrativa por fluxo)
+### FASE 3 — Montar Tabela Comparativa + Calcular % Production-Ready
 
-**Objetivo:** produzir a comparacao honesta, fluxo por fluxo.
-
-Para CADA fluxo, escrever a narrativa em 3 blocos:
-
-1. **No [Incumbente]:** — como o usuario faz isso no sistema de referencia (baseado na pesquisa da Fase 1)
-2. **No Mitra [Sistema]:** — o que aconteceu quando voce tentou fazer a mesma coisa (baseado nos testes da Fase 2)
-3. **Gap:** — classificacao (CRITICO / ALTO / MEDIO / BAIXO) + descricao precisa do que falta
-
-### FASE 4 — Scoring e Priorizacao
-
-Calcular:
-- **% Production-Ready** = (fluxos com gap BAIXO ou sem gap) / total de fluxos * 100
-- **Ranking de gaps** por impacto no uso real (CRITICO primeiro)
-- **Recomendacoes de fix** para o Dev — o que fazer, nao o que falta
+A tabela narrativa (descrita acima) eh o output PRINCIPAL da Fase 3. Para cada feature MUST, preencher as 6 colunas. Depois calcular: **% Production-Ready = media das notas Nosso / 10 x 100**.
 
 ---
 
@@ -156,86 +143,40 @@ Escrever o relatorio em `/opt/mitra-factory/output/rerun_gap_analysis_{sistema}.
 **Sistema:** Mitra [Sistema] (Pipeline XX, Project YYYYY)
 **URL:** https://...
 **Incumbente:** [Nome]
-**Status QA:** APROVADO 10/10/10/10 (RN)
-**Contexto:** [1 frase sobre o objetivo]
+**% Production-Ready:** [media das notas / 10 x 100]
 
 ---
 
 ## Veredito Executivo
 
-[2-4 paragrafos BRUTALMENTE HONESTOS. Sem eufemismos. Responda:
+[2-4 paragrafos BRUTALMENTE HONESTOS. Responda:
 - O sistema e um substituto funcional do incumbente hoje? SIM/NAO.
-- Qual e a distancia real? (% estimado)
+- % production-ready e como calculou
 - O que funciona bem? (ser justo)
 - O que e teatro? (ser honesto)]
 
 ---
 
-## Fluxos Criticos — Comparacao Detalhada
+## Tabela Comparativa por Feature (OBRIGATORIA)
 
-### FLUXO 1: [Descricao da jornada end-to-end]
+TODAS as features MUST listadas. NENHUMA coluna vazia.
 
-**No [Incumbente]:**
-[Narrativa de como o usuario faz no incumbente. Detalhada, com cliques.]
+| Feature | No Incumbente | No Nosso | Nota Inc. | Nota Nosso | Gap |
+|---------|--------------|---------|-----------|-----------|-----|
+| [Feature 1] | [2-4 frases: como o usuario faz no incumbente, com cliques e resultado] | [2-4 frases: o que acontece no nosso quando tenta fazer o mesmo. Se hardcoded, dizer. Se nao funciona, dizer.] | 10 | [0-10] | [1 frase: o que falta] |
+| [Feature 2] | [...] | [...] | 10 | [...] | [...] |
+| ... | ... | ... | ... | ... | ... |
 
-**No Mitra [Sistema]:**
-[Narrativa do que aconteceu quando VOCE tentou. Com evidencias Playwright.]
-
-**Gap: [CRITICO/ALTO/MEDIO/BAIXO]. [Descricao precisa.]**
-
-**O que falta:**
-- [Item concreto 1]
-- [Item concreto 2]
-
----
-
-### FLUXO 2: [...]
-[repetir para cada fluxo]
-
----
-
-## Resumo dos Gaps por Gravidade
-
-### CRITICOS (bloqueiam qualquer uso real)
-| # | Gap | Fluxos afetados | Esforco estimado |
-|---|-----|-----------------|------------------|
-
-### ALTOS (limitam uso significativamente)
-| # | Gap | Fluxos afetados |
-|---|-----|-----------------|
-
-### MEDIOS (reduzem valor mas nao bloqueiam)
-| # | Gap | Fluxos afetados |
-|---|-----|-----------------|
-
----
-
-## O Que Funciona Bem (ser justo)
-
-[Lista numerada do que esta solido e pronto pra producao]
+**% Production-Ready = media das notas Nosso / 10 x 100**
 
 ---
 
 ## Recomendacoes para Dev Hardening
 
-### Prioridade 1 — Gaps CRITICOS (ordem de desbloqueio)
-[Para cada gap critico: O QUE fazer, nao apenas o que falta.
-Formato: acao concreta que o Dev pode executar.]
-
-### Prioridade 2 — Gaps ALTOS
-[Idem]
-
-### Prioridade 3 — Gaps MEDIOS
-[Idem]
-
----
-
-## Conclusao para o Flavio
-
-[2-3 paragrafos finais. Responda:
-- Vale investir mais rounds de Dev neste sistema?
-- O que falta e factivel dentro da plataforma Mitra?
-- Qual seria o estado do sistema apos o hardening?]
+Para cada feature com nota < 10:
+| Feature | Nota Atual | Acao concreta pro Dev | Esforco estimado |
+|---------|-----------|----------------------|-----------------|
+| [...] | [...] | [...] | [...] |
 ```
 
 ---
