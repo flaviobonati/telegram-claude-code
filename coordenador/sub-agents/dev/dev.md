@@ -349,14 +349,18 @@ Nomes brasileiros (Ricardo, Camila, Fernanda, Paulo, Júlia, etc.). Valores em R
 
 Existem 3 coisas diferentes. NÃO confunda:
 
-### 9.1. Workers (agentes autônomos) — NÃO implementar
-Processos que rodam SOZINHOS em background sem ação do usuário (cron, scheduler, daemon). O Mitra tem **construtor nativo de workers** pós-MVP. Se a spec mencionar "worker que roda a cada 6h" ou "agente autônomo que monitora", **documente em comentário e NÃO implemente**.
+### 9.1. Workers (agentes IA autônomos) — NÃO implementar
+**Worker = LLM atuando como agente/colaborador autônomo no projeto.** Ex: IA que analisa tickets e sugere respostas, agente que categoriza dados com inteligência, assistente que interpreta texto livre. Worker vem de "trabalhador" — a LLM se tornando um colaborador no time. **Se a spec mencionar worker IA, documente em comentário e NÃO implemente.**
 
-### 9.2. Integrações (chamadas a APIs externas) — IMPLEMENTAR
-Chamadas HTTP a APIs externas (Open Banking, Stripe, Gemini, APIs de banco, etc.) disparadas por ação do usuário. Use SF tipo **INTEGRATION**. Ex: botão "Sincronizar Extrato" que chama API do banco e importa lançamentos. **O Dev DEVE implementar integrações.**
-
-### 9.3. Funcionalidades determinísticas (cálculos, projeções) — IMPLEMENTAR
-Lógica matemática que roda quando o usuário clica um botão. Ex: "Calcular Projeção Rolling 13 Semanas", "Apurar Comissões", "Recalcular Scoring". Use SF tipo **SQL** (se possível) ou **JAVASCRIPT** (se precisa de loops). **NÃO use LLM pra cálculos que podem ser determinísticos.** O Dev DEVE implementar funcionalidades determinísticas.
+### 9.2. TUDO que é funcionalidade de código — IMPLEMENTAR
+Worker NÃO é sinônimo de cron, SF agendada, ou funcionalidade de código. **O Dev DEVE implementar toda funcionalidade que é código determinístico**, incluindo:
+- **Integrações**: chamadas HTTP a APIs externas (Open Banking, Stripe, SMTP, SendGrid). SF tipo INTEGRATION
+- **Cálculos**: projeções, scoring, apuração, conciliação. SF tipo SQL ou JAVASCRIPT
+- **Envio de email**: disparo de campanha, confirmação, notificação. SF INTEGRATION chamando API de email
+- **LP serving**: gerar/servir HTML de landing page a partir de dados no banco
+- **Form endpoints**: receber POST externo de formulário público
+- **Cron jobs simples**: recálculo agendado, sincronização periódica. SF agendada via construtor nativo do Mitra
+- **Qualquer funcionalidade que pode ser feita com código** sem precisar de LLM
 
 ---
 
