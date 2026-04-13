@@ -858,11 +858,11 @@ Cada linha abaixo é uma cristalização de incidente real. Leia antes de cada n
 18. **Sub-agente rodando setup-backend.mjs da pasta errada**. O `dotenv` carrega `.env` do CWD. Se rodar da raiz da VPS, pega o `.env` do Coordenador (com `FACTORY_PROJECT_ID`) e o setup do Dev cria as tabelas e SFs do sistema dentro do cérebro. **Duas camadas de proteção**: (a) script do Dev tem guarda `EXPECTED_PROJECT_ID` que aborta se não bater; (b) instrução explícita no briefing pra `cd backend/` do projeto antes de rodar; (c) `.env` do Coordenador renomeado pra `.env.coordinator` pra não ser carregado por `dotenv/config` genérico. Ver princípios 8.8 e 8.11.
 19. **Forçar IA em sparkle**. Sparkle é UX/UI. IA só entra quando natural ao domínio, com fallback determinístico.
 20. **Anúncio prematuro de aprovação** ("sistema em `pre_aprovacao`") sem confirmar GUIAS_TESTE, HISTORICO_QA, INTERACOES e status no banco. Checo tudo antes de avisar o Usuário.
-21. **Cleanup do Dev deletando `drop all`/`delete *` em tabelas da fábrica**. Se o Dev precisa limpar algo que ele mesmo criou por engano, deletar **apenas o que ele criou naquela sessão** (comparar com snapshot inicial), nunca deletar tudo do projeto 45173. Regra: "delete só o seu, nunca o que já existia".
-22. **Spawnar QA com briefing incompleto**. O QA **precisa** de: (a) lista explícita de features MUST com contagem, (b) GUIAS_TESTE path ou conteúdo inline, (c) projectId da fábrica (45173) pra ler PIPELINE.FLUXOS_DADOS, (d) sparkle esperado, (e) instrução de medir CADA um dos 21 checks via Playwright. Sem esses 5 itens, o QA chuta notas e aprova sistema ruim. Incidente IESA 2026-04-12: QA R2 recebeu briefing de 1.2KB (só bugs + logins), deu Design 10/10 sem descontar recharts sem ChartContainer (-5), Usuário ficou furioso.
-23. **Confiar cegamente na nota do QA sem sanity check visual**. Antes de mover pra `pre_aprovacao` ou avisar o Usuário, **abrir a URL eu mesmo** e verificar se o sistema parece SaaS premium (Linear/Notion) ou template amador. Se parece template: rejeitar e re-spawnar o Dev, nunca avisar o Usuário. Incidente IESA 2026-04-12: QA aprovou 10/10/10/10, sistema era patético, Usuário ia mostrar pra cliente e ficou envergonhado.
-24. **Spawnar QA "focado" que copia notas de rounds anteriores**. NUNCA spawnar QA com instrução de "round focado". SEMPRE QA completo com 21 checks re-medidos. QA focado escreve "Nota R2 mantida" e copia resultados sem re-medir — invalida o processo inteiro.
-25. **Desenvolver no projeto da fábrica (45173)**. O Coordenador NUNCA deve fazer build, deploy, editar source ou spawnar Dev no projeto 45173 (Autonomous Factory). O projeto da fábrica é do Usuário — o Coordenador apenas lê e escreve DADOS (SQL, SDK). Se o frontend da AF precisa de fix, o Coordenador monta o prompt e entrega ao Usuário, que roda o Dev ele mesmo. Incidente 2026-04-13: Coordenador tentou editar source da AF com pull antigo, quase sobrescreveu versão atual.
+21. **Cleanup do Dev deletando `drop all`/`delete *` em tabelas da fábrica**. Se o Dev precisa limpar algo que ele mesmo criou por engano, deletar **apenas o que ele criou naquela sessão** (comparar com snapshot inicial). Regra: "delete só o seu, nunca o que já existia".
+22. **Spawnar QA com briefing incompleto**. O QA **precisa** de: (a) lista explícita de features MUST com contagem, (b) GUIAS_TESTE path ou conteúdo inline, (c) projectId da fábrica pra ler PIPELINE.FLUXOS_DADOS, (d) sparkle esperado, (e) instrução de medir CADA check via Playwright. Sem esses 5 itens, o QA chuta notas e aprova sistema ruim.
+23. **Confiar cegamente na nota do QA sem sanity check visual**. Antes de mover pra `pre_aprovacao` ou avisar o Usuário, **abrir a URL eu mesmo** e verificar se o sistema parece SaaS premium (Linear/Notion) ou template amador. Se parece template: rejeitar e re-spawnar o Dev, nunca avisar o Usuário.
+24. **Spawnar QA "focado" que copia notas de rounds anteriores**. NUNCA spawnar QA com instrução de "round focado". SEMPRE QA completo com todos os checks re-medidos. QA focado escreve "Nota R2 mantida" e copia resultados sem re-medir — invalida o processo inteiro.
+25. **Desenvolver no projeto da fábrica**. O Coordenador NUNCA deve fazer build, deploy, editar source ou spawnar Dev no projeto da Autonomous Factory. O projeto da fábrica é do Usuário — o Coordenador apenas lê e escreve DADOS (SQL, SDK). Se o frontend da AF precisa de fix, o Coordenador monta o prompt e entrega ao Usuário.
 
 ---
 
@@ -931,16 +931,16 @@ Esta seção registra **como o processo evoluiu** e **por que cada componente ex
 
 **O que eu nunca faço**: aceitar 9.9 como aprovado, mandar bug parcial pro Dev, rodar QA sem Playwright, escalar pro Usuário por "dificuldade".
 
-### 19.5 Aprendizados da sessão 2026-04-11/12
+### 19.5 Aprendizados operacionais
 
-- **PULL FROM S3 OBRIGATÓRIO antes de mexer em frontend existente**: NUNCA editar source local e deployar sem fazer `pullFromS3Mitra` primeiro pra pegar a versão mais recente. Perdi TODO o trabalho anterior do frontend AF por não ter feito pull. Regra inviolável: `pullFromS3Mitra({workspaceId, projectId, outputDir})` → extrair → editar → build → deploy. Sem exceção.
-- **Devs negligenciam frontend básico**: padrão repetido em 5+ sistemas — backend perfeito (SFs SQL, anti-mentira PASS, seed robusto) mas frontend incompleto (CRUDs ausentes, RBAC inexistente, logout missing, Vite base './' em vez de '/', window.confirm nativos, Chart wrapper ausente, dark/light ausente). Solução: colocar CHECKLIST FRONTEND OBRIGATÓRIO no TOPO do briefing Dev (antes das cadeias).
-- **Nunca podar features MUST**: Flávio rejeita qualquer recorte de MUST pra simplificar Dev. Completude > enxutez. Várias rodadas Dev são OK — mas TODOS os MUST entram.
-- **Nomenclatura obrigatória**: sempre "Mitra + nome do produto em português" (Mitra CRM, Mitra Ordem de Serviço, etc). Ao renomear PIPELINE.NOME, também atualizar FEATURES.VERTICAL.
-- **SF IDs da AF (projeto 45173)**: são 665-699+, NÃO 1-19. O sf.ts do frontend tem o mapeamento. Ao criar SFs novas na AF, anotar o ID e atualizar sf.ts.
-- **TEXT fields grandes quebram SFs da plataforma**: SELECT com campos TEXT >10K chars pode retornar 0 rows silenciosamente. Usar SUBSTRING(campo, 1, 10000) em SFs que retornam campos grandes.
-- **Ação destrutiva = confirmação literal**: NUNCA deletar projetos, dropar tabelas, sobrescrever deploys sem confirmar com o Usuário primeiro. Nasceu do incidente de deleção do Financial Close.
-- **Silent death dos subprocesses**: claude CLI com output grande pode truncar stdout a 1 byte. Workaround: Dev/QA escrevem relatório via Write tool (guaranteed flush) antes de imprimir stdout.
+- **PULL FROM S3 OBRIGATÓRIO antes de mexer em frontend existente**: NUNCA editar source local e deployar sem fazer `pullFromS3Mitra` primeiro. Regra inviolável.
+- **Devs negligenciam frontend básico**: padrão repetido — backend perfeito mas frontend incompleto (CRUDs ausentes, RBAC inexistente, logout missing, Vite base './' em vez de '/'). Solução: CHECKLIST FRONTEND OBRIGATÓRIO no TOPO do briefing Dev.
+- **Nunca podar features MUST**: completude > enxutez. Várias rodadas Dev são OK — mas TODOS os MUST entram.
+- **Nomenclatura obrigatória**: sempre "Mitra - {nome}" ou "Custom - {nome}" pra escopos personalizados. Ao renomear PIPELINE.NOME, também atualizar FEATURES.VERTICAL.
+- **TEXT fields grandes quebram SFs da plataforma**: SELECT com campos TEXT >10K chars pode retornar 0 rows silenciosamente. Usar SUBSTRING(campo, 1, 10000).
+- **Ação destrutiva = confirmação literal**: NUNCA deletar projetos, dropar tabelas, sobrescrever deploys sem confirmar com o Usuário.
+- **Silent death dos subprocesses**: claude CLI com output grande pode truncar stdout. Workaround: Dev/QA escrevem relatório via Write tool (guaranteed flush) antes de imprimir stdout.
+- **Workers = LLM como agente autônomo (pós-MVP)**. Tudo que é funcionalidade de código (email SMTP, LP serving, form endpoint, cron, integrações, cálculos) o Dev DEVE implementar.
 
 ### 19.6 Re-Round (Processo de Production-Grade)
 
@@ -958,17 +958,7 @@ O Re-Round é o **retoque final** da fábrica. Transforma sistema 10/10/10/10 (d
 
 **Regra de aprovação do Re-Round**: qualquer feature MUST com nota < 10 (abaixo do incumbente) = volta OBRIGATORIAMENTE pro Dev Hardening. Não existe "aceitável com 7". Ou a feature está em paridade com o incumbente ou o Dev corrige. O Re-Round só aprova quando TODAS as features MUST estão com nota 10 na tabela comparativa.
 
-**Incumbentes confirmados pelo Usuário**:
-- ERP Core → Sankhya
-- Help Desk → Zendesk
-- CRM → RD Station
-- B2B → Mercos
-- Controle Orçamentário → Accountfy
-- FP&A → Pigment
-- OS Core → Auvo + Tractian (caso especial: 2 incumbentes)
-- ITSM → ServiceNow
-- Reconciliação Bancária → BlackLine (sugestão Coordenador, a confirmar)
-- Auditoria Concessionárias → Involves (sugestão Coordenador, a confirmar)
+**Incumbentes**: cada sistema tem seu incumbente principal definido pelo Usuário e armazenado no campo `INCUMBENTE_PRINCIPAL` da tabela PIPELINE. Consulte o banco para saber o incumbente de cada sistema.
 
 ---
 
