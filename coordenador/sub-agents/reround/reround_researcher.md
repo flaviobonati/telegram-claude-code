@@ -101,17 +101,26 @@ Para CADA feature, o Re-Round verifica 3 niveis. Nao basta passar no nivel 1 ou 
 
 **A nota de % production-ready do Re-Round considera os 3 niveis.** Feature que passa Nivel 1 e 2 mas falha no 3 conta como PARCIAL (50% do peso), nao como funcional (100%).
 
-**TABELA OBRIGATORIA — Conclusao por feature, 1 coluna por nivel:**
+**TABELA OBRIGATORIA — Narrativa comparativa por feature:**
 
-O Re-Round DEVE produzir esta tabela no relatorio. TODAS as features MUST aparecem. NENHUM nivel pode ficar vazio.
+O Re-Round DEVE produzir esta tabela no relatorio. TODAS as features MUST aparecem. NENHUMA coluna pode ficar vazia.
+
+Para CADA feature MUST, o Re-Round escreve:
+1. **Como funciona no INCUMBENTE** — narrativa de 2-4 frases descrevendo a experiencia real do usuario no incumbente (cliques, telas, resultado). Nivel de detalhe: "o usuario clica X, ve Y, o resultado eh Z".
+2. **Como funciona no NOSSO** — narrativa de 2-4 frases descrevendo o que acontece no nosso sistema quando voce tenta fazer a mesma coisa. Ser HONESTO: se eh hardcoded, dizer. Se nao funciona, dizer.
+3. **Nota Incumbente** — sempre 10 (benchmark)
+4. **Nota Nosso** — de 0 a 10, respondendo: "quao BOM DE USAR e quao COMPLETO eh o nosso comparado ao incumbente?" 0=teatro/inexistente, 5=basico funcional, 10=paridade ou superior
+5. **Gap** — o que falta pra igualar (em 1 frase)
 
 ```
-| Feature | N1 EXISTE? | N2 FUNCIONA? | N3 QUALIDADE INCUMBENTE? | % Paridade | Conclusao |
-|---------|-----------|-------------|-------------------------|-----------|-----------|
-| Landing Pages | Sim, 6 listadas | Criar: sim. Publicar: URL existe. Acessar: 404 | Incumbente: editor drag-drop 12 componentes, templates, preview. Nos: titulo+conteudo apenas | 20% | PARCIAL - editor inexistente |
-| WhatsApp | Sim, 160 conversas | Enviar: nao testavel, dados hardcoded | Incumbente: Meta API bidirecional, HSM templates. Nos: dados fake sem integracao | 0% | TEATRO |
-| Pipeline Kanban | Sim, 24 cards | Drag-drop funcional, detalhe com timeline | Incumbente: kanban + automacoes. Nos: kanban + IA proxima acao (SUPERA) | 95% | FUNCIONAL |
+| Feature | No Incumbente | No Nosso | Nota Inc. | Nota Nosso | Gap |
+|---------|--------------|---------|-----------|-----------|-----|
+| Landing Pages | Editor drag-drop com 12 componentes, galeria de templates, preview responsivo, publica em subdominio com SSL, visitante preenche form, lead entra com UTMs automaticos | Lista 6 LPs. Form cria com titulo+conteudo. Sem editor visual, sem preview, sem URL publica funcional | 10 | 2 | Editor visual + serving publico |
+| Automacoes | Canvas visual react-flow: trigger > espera > email > condicao > acao. Motor executa 24/7. 15+ tipos de acao | Lista 9 automacoes hardcoded. Canvas existe mas nao cria fluxo real, nao executa nenhuma acao | 10 | 1 | Construtor funcional + motor execucao |
+| Pipeline Kanban | Kanban com drag-drop, filtros por time, card com valor/SLA, detalhe com timeline | 24 cards draggable, 2 pipelines, detalhe com timeline + IA proxima acao. Supera incumbente | 10 | 10 | Nenhum (supera) |
 ```
+
+**% Production-Ready = media das notas do Nosso / 10 × 100**. Feature com nota 0 puxa a media pra baixo. Feature com nota 10 contribui 100%.
 
 Se o Re-Round nao preencher TODAS as colunas pra TODAS as features → relatorio REJEITADO pelo Coordenador.
 
