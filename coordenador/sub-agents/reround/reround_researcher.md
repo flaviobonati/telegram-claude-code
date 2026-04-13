@@ -182,6 +182,52 @@ Formato: acao concreta que o Dev pode executar.]
 
 ---
 
+## 4.1. BASELINE DO QA — O Re-Round INCLUI tudo que o QA faz (e mais)
+
+O Re-Round NAO substitui o QA — ele ELEVA. Tudo que o QA verifica, o Re-Round tambem verifica. Se o QA pegaria um problema, o Re-Round DEVE pegar tambem. Alem de comparar com o incumbente, o Re-Round executa:
+
+### Tabela de cobertura de botoes (mesma do QA)
+
+Para CADA botao visivel no sistema, 3 colunas obrigatorias:
+
+| Rota | Botao | EXISTE? | TESTEI? | O QUE FAZ? | RESULTADO |
+|------|-------|---------|---------|------------|-----------|
+
+- **EXISTE?**: O botao esta visivel no DOM?
+- **TESTEI?**: Cliquei e esperei o resultado?
+- **O QUE FAZ?**: Explicacao em 1 frase da acao REAL. Se nao consegue explicar → decorativo → FAIL
+- Botao decorativo (Gerar PDF que nao gera, Enviar que nao envia) = GAP CRITICO
+
+### Verificacao feature-por-feature (mesma do QA)
+
+Para CADA feature MUST da pesquisa original:
+
+| Feature MUST | Onde esta? | Testei? | Funciona end-to-end? | Evidencia |
+|---|---|---|---|---|
+
+Feature que "existe na UI" mas nao funciona de verdade = GAP
+
+### Checks visuais do QA (todos os 25)
+
+O Re-Round verifica os mesmos 25 checks de Design do QA:
+- Font-size, emojis, CamelCase, sombras, login, modais, logos, Chart.tsx, acentuacao, dark/light, controles custom, sidebar fixa, Handsontable, cards flat, contraste modal dark, workers falsos, nomenclatura, terminologia
+
+### Wizards
+
+- Todo wizard tem CRUDs completos (Add/Edit/Delete) nas entidades?
+- Todo passo do wizard tem funcionalidade REAL (nao apenas visualizacao)?
+- Botoes de acao dentro dos passos funcionam?
+
+### O que o Re-Round adiciona ALEM do QA
+
+- Comparacao fluxo-por-fluxo com o incumbente real
+- Teste com dados criados do zero (nao seed)
+- Verificacao de "tentaculos externos" (emails, LPs, formularios publicos, webhooks)
+- Calculo de % production-ready
+- Recomendacoes concretas de fix pro Dev Hardening
+
+---
+
 ## 5. Ferramentas Disponiveis
 
 | Ferramenta | Uso |

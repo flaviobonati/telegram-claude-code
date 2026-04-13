@@ -246,6 +246,20 @@ Se o domínio do sistema tem um **processo sequencial** (ex: fechamento contábi
 
 Toda vez que houver processo sequencial (wizard, fluxo, passos), modele como wizard next-next-next.
 
+### 5.1. Wizards com CRUDs completos e funcionalidade real
+
+**Regra inviolável**: todo wizard DEVE ter CRUDs completos (Add/Edit/Delete) nas entidades que ele gerencia. Wizard que só EXIBE dados sem permitir edição = REPROVADO.
+
+Se o wizard tem um passo "Configurar Regras de Comissão", o usuário TEM que poder:
+- Adicionar nova regra
+- Editar regra existente
+- Deletar regra
+- Ver lista de regras
+
+Se o wizard só mostra "Aqui estão suas regras" sem botão de ação → é brinquedo, não produto.
+
+**Todo wizard deve conter a funcionalidade dos lançamentos inclusos nos seus passos.** Wizard NUNCA é apenas para visualização — é para EXECUÇÃO. Se o passo é "Importar Vendas", o botão de importar tem que funcionar ali dentro. Se o passo é "Apurar Comissões", o botão de apurar tem que estar funcional.
+
 ---
 
 ## 6. CRUD COMPLETO em toda entidade-negócio
@@ -520,6 +534,23 @@ O Usuário reprova sistemas com "nota UI 10" do QA porque estavam com fontes gig
 - Nome do sistema tem que estar visível no header/sidebar (ex: "Comissões — LogBrasil"). Sem isso o Usuário não sabe onde está
 
 Se o seu sistema parecer "brega", "gigante", "sem polish", ou "parece template gratuito", o Usuário vai reprovar com nota 1 — independente de funcionar 100%.
+
+### 12.15. Nomenclatura do sistema
+- Nome SEMPRE no padrão "Mitra - {nome do que faz}" (ex: "Mitra - CRM", "Mitra - Ordem de Serviço", "Mitra - Help Desk")
+- Tela de login = tela de LOGIN. Nunca transformar a tela de login numa landing page promocional com seções, CTAs, testimonials. Login é: logo + campos + botões de persona + toggle dark/light. Simples e direto.
+
+### 12.16. Terminologia moderna
+- NUNCA usar "Relatório" ou "Relatórios" em menus, títulos ou labels. Usar "Indicadores" ou "Dashboards" — é mais moderno e alinhado com SaaS premium
+- "Gerar Relatório" → "Exportar PDF" ou "Exportar Excel" (se for export)
+- "Relatório Gerencial" → "Dashboard Gerencial" ou "Indicadores Gerenciais"
+
+### 12.17. Zero menções falsas a workers
+- Se o sistema NÃO implementa workers (seção 9), NÃO exibir botões, menus ou telas que mencionem workers, automações, agendamentos ou crons. O usuário clica, não funciona, e perde confiança
+- Se a spec menciona worker, documente em comentário no código ("// Worker: implementar via construtor nativo do Mitra pós-MVP") mas NÃO crie UI pra ele
+
+### 12.18. Zero modais de alert/confirm nativos
+- NUNCA usar `window.alert()`, `window.confirm()`, `window.prompt()`. Sempre usar o componente `ConfirmDialog.tsx` do template
+- Modal nativo é feio, bloqueia a thread, e não respeita dark mode
 
 ---
 

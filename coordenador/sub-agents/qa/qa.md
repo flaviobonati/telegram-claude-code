@@ -57,7 +57,7 @@ Começar em 10. Cada violação desconta:
 | 9 | Logo light/dark | `mitra-logo-light.svg` no light, `mitra-logo-dark.svg` no dark | -2 |
 | 10 | Ícones misturados | Lucide + Heroicons + emoji | -1 |
 | 11 | Favicon | Deve ser `mitra-logo-dark.svg` | -1 |
-| 12 | **Chart.tsx obrigatório** | PROCEDIMENTO EXATO: (1) grep bundle por "ChartContainer" — contar. (2) grep bundle por "recharts" — contar. SE recharts > 0 E ChartContainer == 0 → DESCONTO -5 REPROVA. Sem exceção, sem WARN, sem julgamento. Nunca dar 0 desconto quando recharts está presente sem ChartContainer. | -5 |
+| 12 | **Chart.tsx obrigatório** | Vite MINIFICA nomes de export — NÃO grep o bundle por "ChartContainer" (sempre dá 0). Em vez disso: (1) Verificar no DOM se os gráficos têm container com título/subtítulo (div.rounded-xl com h3 dentro). (2) Grep bundle pelo CSS pattern `rounded-xl border shadow-sm py-6` (classe do ChartContainer). SE gráficos existem MAS não têm container com título → DESCONTO -5. Se não há gráficos no sistema → N/A. | -5 |
 | 13 | **Acentuação correta** | Menus/títulos têm palavras comuns com acento (Estratégico, Relatórios, Configurações, Notificações, etc.) — verificar textContent | -3 |
 | 14 | **Dark + Light mode em CADA tela** | Toggle tema e verificar que TODAS as telas renderizam corretamente em AMBOS os modos. Screenshot obrigatório. | -3 |
 | 15 | **Controles custom (não native)** | Grep bundle por `<select>`, `<input type="date">`, `<input type="checkbox">` nativos. Deve usar componentes custom (Select.tsx, DatePicker, Checkbox.tsx). | -2 |
@@ -67,6 +67,10 @@ Começar em 10. Cada violação desconta:
 | 19 | **Sidebar fixa no scroll** | Scroll até o final de uma página longa (ex: `/bandeja`, `/tickets`, lista com >30 itens). Medir `sidebar.getBoundingClientRect().top` antes e depois do scroll — deve continuar ≈0 (ou próximo). Se a sidebar sumir no scroll junto com o conteúdo, REPROVA. Verificar `position: sticky` ou `h-screen overflow-y-auto` no layout. | -3 |
 | 20 | **Handsontable obrigatório para grids editáveis** | Se o sistema tem dados tabulares editáveis (orçamento, planilha, tabela de preços, comissões, etc.), DEVE usar Handsontable. Grep bundle por "handsontable" ou "HotTable". Se usa `<input>` básicos ou forms pra dados que deveriam ser planilha → REPROVA. | -5 |
 | 21 | **Cards flat (zero profundidade)** | Cards DEVEM ser flat — `border: 1px solid`, `border-radius: 8px`, ZERO `box-shadow` ou shadow mínimo (`shadow-sm`). Cards com sombra pesada, gradientes ou efeito 3D → REPROVA. Grep `boxShadow` nos cards — blur deve ser 0 ou ≤4px. | -3 |
+| 22 | **Contraste fonte título modal dark mode** | Abrir qualquer modal em dark mode. `getComputedStyle` do título (h2/h3 dentro do modal overlay). Contraste título vs fundo deve ser legível (cor clara sobre fundo escuro). Se título some ou fica ilegível → REPROVA. | -3 |
+| 23 | **Zero menções falsas a workers** | Grep bundle por palavras "worker", "automação", "agendamento", "cron" em labels/botões visíveis. Se aparecem botões/menus que levam a funcionalidades de worker mas o sistema não implementa workers → -3. Botão que promete e não entrega = pior que não ter o botão. | -3 |
+| 24 | **Nomenclatura "Mitra - {nome}"** | Título do sistema no header/sidebar/login DEVE seguir padrão "Mitra - {nome}". Login NÃO pode ser landing page promocional (seções, CTAs, testimonials). Login = logo + campos + botões persona + toggle tema. | -2 |
+| 25 | **Zero "Relatório" na terminologia** | Grep bundle por "Relatório" ou "Relatórios" em menus/títulos. Deve usar "Indicadores" ou "Dashboards". "Gerar Relatório" → "Exportar PDF/Excel". | -1 |
 
 **Nota Design = max(0, 10 - soma dos descontos)**. Se < 8, REPROVA o sistema inteiro.
 
@@ -76,8 +80,16 @@ Começar em 10. Cada violação desconta:
 Para cada persona, testar jornada completa. Nota = (passos que funcionaram / total de passos) * 10.
 Nota UX final = média das notas de todas as personas.
 
-### Aderência (features MUST)
-Nota = (features MUST que funcionam de verdade / total features MUST) * 10.
+### Aderência (features MUST — verificação 1 a 1)
+O QA recebe a lista de features MUST do briefing. Para CADA feature MUST:
+1. Localizar onde a feature está implementada (tela, botão, wizard step)
+2. EXECUTAR a feature via Playwright — não basta ver que o botão existe, tem que clicar e confirmar que funciona end-to-end
+3. Anotar na tabela: FEATURE | ONDE ESTÁ | TESTEI? | FUNCIONA? | EVIDÊNCIA
+4. Feature que "existe na UI" mas não funciona de verdade (botão decorativo, CRUD read-only, form que não persiste) = NÃO CONTA
+
+Nota = (features MUST que funcionam de verdade end-to-end / total features MUST) * 10.
+
+**REGRA CRÍTICA**: O QA não pode dar Aderência 10 sem ter testado CADA feature MUST individualmente. "Testei as telas principais e parecem OK" = REPROVADO como QA. A tabela feature-por-feature é OBRIGATÓRIA no relatório.
 
 ### FluxoDados (NOVA 4a DIMENSÃO — end-to-end)
 
@@ -153,10 +165,14 @@ O que o QA verifica:
 - Micro-interações presentes (toast animado, skeleton loading, hover states)
 - Se o sistema usa IA opcionalmente (ex: "Sugerir ata"), verificar que a feature funciona de verdade no DOM com fallback determinístico quando a API falha
 
-### Regra E — Toda ação clicável
+### Regra E — Todo botão DEVE ter funcionalidade REAL (não apenas reagir)
 Para cada botão/link visível:
-- Clicar e verificar que reage (abre modal, navega, muda estado)
-- Botão decorativo (sem onClick) = REPROVA
+- Clicar e verificar que EXECUTA UMA AÇÃO REAL (persiste dado, navega, abre modal funcional, dispara cálculo)
+- **Não basta "reagir"** — botão "Gerar PDF" que abre toast "PDF gerado" mas não gera nada = REPROVA
+- **Não basta "existir"** — botão "Enviar" que não envia, "Exportar" que não exporta, "Calcular" que não calcula = REPROVA
+- Na tabela de cobertura, adicionar coluna **"O que faz"** — QA EXPLICA em 1 frase o que o botão realmente executa. Se não consegue explicar → botão é decorativo → REPROVA
+- Botão decorativo (sem onClick ou com onClick que não faz nada funcional) = -2 Design + feature MUST falhando em Aderência
+- **Wizard steps**: cada passo do wizard que tem botões de ação (Adicionar, Importar, Calcular) DEVE ter esses botões funcionais. Wizard que é só visualização = REPROVA
 
 ### Regra F — Logout
 - Achar botão Sair/Logout, clicar
@@ -205,7 +221,37 @@ Para CADA persona, logar via Playwright e:
 
 **Esse inventário é o CONTRATO de teste.** Todo botão listado DEVE ser testado na Fase 2. Se não testou, aparece como NÃO_TESTADO no relatório.
 
-**REGRA CRÍTICA DE COBERTURA:** Se a Fase 1 listou 50 botões, a Fase 2 DEVE ter 50 linhas na tabela de resultados (testados/passaram/falharam). Não pode haver botão listado que não foi testado. Cobertura = testados/inventario DEVE ser 100%.
+**REGRA CRÍTICA DE COBERTURA:** Se a Fase 1 listou 50 botões, a Fase 2 DEVE ter 50 linhas na tabela de resultados. Cobertura = testados/inventario DEVE ser 100%.
+
+#### FASE 2 — TABELA DE COBERTURA DE BOTÕES (3 colunas obrigatórias)
+
+Para CADA botão do inventário, a tabela de resultados DEVE ter estas 3 colunas:
+
+```
+| Rota | Botão | EXISTE? | TESTEI? | O QUE FAZ? | RESULTADO |
+| /campanhas | + Nova Campanha | Sim | Sim | Abre modal com 4 campos, persiste no banco, aparece na lista | PASS |
+| /campanhas | Gerar PDF | Sim | Sim | Nada acontece — toast não aparece, PDF não gera | FAIL (decorativo) |
+| /equipes | Editar | Sim | Sim | Abre modal pré-preenchido, UPDATE no banco ao salvar | PASS |
+```
+
+- **EXISTE?**: O botão está visível no DOM?
+- **TESTEI?**: Cliquei e esperei o resultado?
+- **O QUE FAZ?**: Explicação em 1 frase da ação REAL que o botão executa. Se não consegue explicar → botão é decorativo → FAIL
+- **RESULTADO**: PASS (funciona de verdade) ou FAIL (decorativo, erro, não faz nada)
+
+**Botão FAIL = -2 em Design + feature MUST falhando em Aderência (se a feature correspondente é MUST).**
+
+#### Checks do Dev que o QA DEVE verificar
+
+O Dev recebe regras específicas. Se o Dev não cumpriu, o QA pega. Verificar:
+
+- [ ] Wizards têm CRUDs completos (Add/Edit/Delete) nas entidades — não apenas visualização
+- [ ] Cada passo do wizard tem funcionalidade real (botões de ação funcionam, não só exibem)
+- [ ] Nome do sistema segue "Mitra - {nome}" no header/sidebar/login
+- [ ] Tela de login NÃO é landing page (sem seções, CTAs, testimonials — só logo + campos + botões persona)
+- [ ] Zero menções falsas a workers (sem botões/menus de automação que não funcionam)
+- [ ] Zero window.alert/confirm/prompt nativos (deve usar ConfirmDialog)
+- [ ] Terminologia: "Indicadores"/"Dashboards", nunca "Relatório"/"Relatórios"
 
 Cada botão "NÃO_TESTADO" é falha do QA. O QA é arroz com feijão: lista, clica, verifica. Sem pular.
 
