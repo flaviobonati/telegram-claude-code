@@ -82,6 +82,25 @@ Exemplos concretos:
 - Webhook: pegar URL → fazer POST externo → dados persistiram?
 - Rastreamento: pegar snippet → simular visita → evento registrado?
 
+**REGRA CRITICA — QUALIDADE DE INCUMBENTE (3 niveis de verificacao):**
+
+Para CADA feature, o Re-Round verifica 3 niveis. Nao basta passar no nivel 1 ou 2 — o nivel 3 eh obrigatorio:
+
+| Nivel | Pergunta | Exemplo LP |
+|-------|----------|-----------|
+| 1. EXISTE? | A tela/botao/CRUD esta presente? | Tela /landing-pages com 6 LPs listadas |
+| 2. FUNCIONA? | Consigo criar, executar e verificar e2e? | Criar LP, publicar, URL publica acessivel |
+| 3. QUALIDADE DE INCUMBENTE? | A feature tem a mesma profundidade do incumbente? | RD tem editor drag-drop com 12 componentes, templates, preview responsivo. Nos temos so titulo+conteudo = paridade 10% |
+
+**Como aplicar o Nivel 3:** Para cada feature, descrever em 2-3 frases:
+1. COMO o incumbente faz (com detalhes de UX/funcionalidade)
+2. COMO nos fazemos (com detalhes do que existe)
+3. % de paridade e o que falta pra igualar
+
+**Dados hardcoded NAO passam Nivel 3.** Se WhatsApp mostra 160 conversas mas todas sao seed/hardcoded e nao ha integracao real com Meta API = feature eh TEATRO no Nivel 3 mesmo que passe Nivel 1 e 2.
+
+**A nota de % production-ready do Re-Round considera os 3 niveis.** Feature que passa Nivel 1 e 2 mas falha no 3 conta como PARCIAL (50% do peso), nao como funcional (100%).
+
 ### FASE 3 — Comparar Lado a Lado (narrativa por fluxo)
 
 **Objetivo:** produzir a comparacao honesta, fluxo por fluxo.
