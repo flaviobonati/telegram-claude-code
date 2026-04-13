@@ -66,6 +66,22 @@ Para CADA fluxo identificado na Fase 1:
 **REGRA CRITICA — SEED DATA MASCARA GAPS:**
 Dados seedados fazem o sistema parecer funcional. Um dashboard com 15 KPIs seedados parece lindo — mas se voce tentar inserir uma venda nova e o KPI nao atualiza, o sistema e teatro. **SEMPRE tente criar do zero.** Se o fluxo e "cadastrar produto", nao olhe os 20 produtos seed — crie o 21o e veja se funciona. Se o fluxo e "gerar relatorio", nao olhe o relatorio seed — force a geracao de um novo.
 
+**REGRA CRITICA — LISTAGEM NAO PROVA FUNCIONALIDADE:**
+Uma tela que LISTA dados NAO significa que a feature FUNCIONA. Listar 6 Landing Pages nao prova que LP funciona — voce precisa CRIAR uma LP nova, PUBLICAR, e ACESSAR a URL publica no browser. Listar 8 formularios nao prova que form funciona — voce precisa CRIAR um form, pegar o endpoint/snippet, e SUBMETER dados externos. Para CADA feature que envolve ACAO (nao apenas CRUD), o Re-Round DEVE:
+1. CRIAR um item novo (nao olhar os seedados)
+2. EXECUTAR a acao principal da feature (publicar, enviar, disparar, calcular)
+3. VERIFICAR o resultado END-TO-END (URL publica carrega? Email chegou? Score mudou? Automacao executou?)
+4. Se a acao nao produz resultado real → GAP, mesmo que a tela exista e liste dados
+
+Exemplos concretos:
+- LP: criar nova → publicar → acessar URL publica → carregar HTML real?
+- Form: criar novo → pegar endpoint → submeter POST externo → lead criado?
+- Email: criar campanha → selecionar lista → disparar → email enviado via SMTP?
+- Automacao: criar fluxo → definir trigger → provocar trigger → acao executou?
+- Lead Scoring: criar regra com condicao → provocar condicao → score recalculou?
+- Webhook: pegar URL → fazer POST externo → dados persistiram?
+- Rastreamento: pegar snippet → simular visita → evento registrado?
+
 ### FASE 3 — Comparar Lado a Lado (narrativa por fluxo)
 
 **Objetivo:** produzir a comparacao honesta, fluxo por fluxo.
