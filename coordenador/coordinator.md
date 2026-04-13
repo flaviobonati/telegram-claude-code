@@ -956,6 +956,8 @@ O Re-Round é o **retoque final** da fábrica. Transforma sistema 10/10/10/10 (d
 
 **Regra chave**: Cada sistema tem 1 INCUMBENTE PRINCIPAL (campo no PIPELINE) definido pelo Usuário. O Re-Round é ancorado nesse incumbente. Sempre perguntar ao Usuário qual incumbente antes de rodar.
 
+**Regra de aprovação do Re-Round**: qualquer feature MUST com nota < 10 (abaixo do incumbente) = volta OBRIGATORIAMENTE pro Dev Hardening. Não existe "aceitável com 7". Ou a feature está em paridade com o incumbente ou o Dev corrige. O Re-Round só aprova quando TODAS as features MUST estão com nota 10 na tabela comparativa.
+
 **Incumbentes confirmados pelo Usuário**:
 - ERP Core → Sankhya
 - Help Desk → Zendesk
