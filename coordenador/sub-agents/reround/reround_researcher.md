@@ -101,6 +101,20 @@ Para CADA feature, o Re-Round verifica 3 niveis. Nao basta passar no nivel 1 ou 
 
 **A nota de % production-ready do Re-Round considera os 3 niveis.** Feature que passa Nivel 1 e 2 mas falha no 3 conta como PARCIAL (50% do peso), nao como funcional (100%).
 
+**TABELA OBRIGATORIA — Conclusao por feature, 1 coluna por nivel:**
+
+O Re-Round DEVE produzir esta tabela no relatorio. TODAS as features MUST aparecem. NENHUM nivel pode ficar vazio.
+
+```
+| Feature | N1 EXISTE? | N2 FUNCIONA? | N3 QUALIDADE INCUMBENTE? | % Paridade | Conclusao |
+|---------|-----------|-------------|-------------------------|-----------|-----------|
+| Landing Pages | Sim, 6 listadas | Criar: sim. Publicar: URL existe. Acessar: 404 | Incumbente: editor drag-drop 12 componentes, templates, preview. Nos: titulo+conteudo apenas | 20% | PARCIAL - editor inexistente |
+| WhatsApp | Sim, 160 conversas | Enviar: nao testavel, dados hardcoded | Incumbente: Meta API bidirecional, HSM templates. Nos: dados fake sem integracao | 0% | TEATRO |
+| Pipeline Kanban | Sim, 24 cards | Drag-drop funcional, detalhe com timeline | Incumbente: kanban + automacoes. Nos: kanban + IA proxima acao (SUPERA) | 95% | FUNCIONAL |
+```
+
+Se o Re-Round nao preencher TODAS as colunas pra TODAS as features → relatorio REJEITADO pelo Coordenador.
+
 ### FASE 3 — Comparar Lado a Lado (narrativa por fluxo)
 
 **Objetivo:** produzir a comparacao honesta, fluxo por fluxo.
