@@ -540,12 +540,16 @@ O Usuário reprova sistemas com "nota UI 10" do QA porque estavam com fontes gig
 - Cor do texto: slate-800 (nunca `#000` puro), secundário slate-500, terciário slate-400
 - Line-height: 1.5 corpo, 1.2 títulos
 
-### 12.2. Espaçamento
+### 12.2. Espaçamento e Padding (CRÍTICO — causa visual mais comum de reprovação)
 - Padding interno cards: `1.25rem` (`p-5`)
+- Padding interno células de tabela: `0.75rem` (`px-3 py-2`)
+- Padding interno modais/forms: `1.5rem` (`p-6`)
 - Gap entre cards: `1rem` (`gap-4`)
 - Margem lateral página: `1.5rem` (`px-6`)
 - Espaçamento vertical entre seções: `2rem` (`space-y-8`)
-- NENHUM elemento encostando na borda sem padding
+- **NENHUM componente encostando na borda** — todo elemento interativo (input, select, botão, tabela) DEVE ter padding/margin que o separe das bordas do container
+- **Inputs e selects NUNCA w-full sem padding no container** — se o input ocupa 100% da largura, o container pai DEVE ter `px-4` ou `px-6`
+- **Edits/forms em modais**: campos com `space-y-4` entre eles, labels com `mb-1`
 
 ### 12.3. Cards e superfícies
 - `border-radius`: 8px (`rounded-lg`)
@@ -579,11 +583,27 @@ O Usuário reprova sistemas com "nota UI 10" do QA porque estavam com fontes gig
 - **Modal SOMENTE para forms curtos** (< 5 campos). Artigos, relatórios, conteúdo longo = página dedicada
 - **Nomes com espaço**: "Help Desk", "Canal de Denúncia" (nunca junto)
 
-### 12.8. Light/Dark mode
+### 12.8. Light/Dark mode (TEORIA + REGRAS)
 - Logo: `mitra-logo-light.svg` → light mode (fundo claro). `mitra-logo-dark.svg` → dark mode (fundo escuro). O nome do arquivo indica o TEMA, não a cor do fill
 - Tags/badges legíveis em AMBOS (testar)
-- Backgrounds: `white` / `slate-50` (light), `slate-900` / `slate-950` (dark)
 - Toggle de tema obrigatório em toda tela, com persistência em `localStorage`
+
+**Teoria do dark mode: NUNCA hardcodar cores. Usar CSS variables ou classes Tailwind `dark:`.**
+
+| Elemento | Light mode | Dark mode |
+|----------|-----------|-----------|
+| Fundo página | `bg-white` / `bg-slate-50` | `bg-slate-900` / `bg-slate-950` |
+| Fundo card | `bg-white` | `bg-slate-800` |
+| Fundo tabela | `bg-white` | `bg-slate-900` |
+| Row hover tabela | `bg-slate-50` | `bg-slate-800` |
+| Zebra striping | `bg-slate-50` (odd) | `bg-slate-800/50` (odd) |
+| Borda | `border-slate-200` | `border-slate-700` |
+| Texto primário | `text-slate-900` | `text-slate-100` |
+| Texto secundário | `text-slate-500` | `text-slate-400` |
+| Input background | `bg-white` | `bg-slate-800` |
+| Input borda | `border-slate-300` | `border-slate-600` |
+
+**REGRA: ZERO `bg-white` hardcoded.** Usar `bg-white dark:bg-slate-800` ou CSS variable `var(--color-surface)`. Grep o bundle por `bg-white` sem `dark:` — se encontrar, é bug.
 
 ### 12.9. Controles custom (zero nativos)
 - **ZERO** `<select>`, `<input type="date">`, `<input type="month">`, `<input type="checkbox">`, `<input type="radio">` nativos
