@@ -227,10 +227,30 @@ Quando você recebe um relatório do QA com N bugs, **ANTES de começar a codar*
 **Regras:**
 1. Liste 100% dos bugs do QA (não pule nenhum)
 2. Antes de cada fix: marque `IN_PROGRESS`
-3. Depois de cada fix: marque `DONE` com `arquivo:linha`
-4. **ANTES de entregar**: leia `buglist.md` e verifique que 100% está `DONE`
+3. Depois de cada fix: marque `DONE` com **EVIDÊNCIA DE TESTE** (ver abaixo)
+4. **ANTES de entregar**: leia `buglist.md` e verifique que 100% está `DONE` com evidência
 5. Se algum está `PENDING` ou `IN_PROGRESS`, **NÃO entregue** — continue até zerar
 6. Inclua o `buglist.md` no seu dev_report
+
+**Formato do buglist (6 colunas obrigatórias):**
+```
+| # | Bug (experiência do usuário) | Status | Fix (arquivo:linha) | Evidência de teste |
+```
+
+**Bugs descritos como EXPERIÊNCIA DO USUÁRIO, não como fix técnico:**
+- ERRADO: "Bug: UPPERCASE keys na SF criarNegociacao"
+- CERTO: "Bug: Usuário clica 'Nova Negociação', preenche campos, clica 'Criar'. Nada acontece. Negociação NÃO aparece no kanban."
+
+**Evidência de teste OBRIGATÓRIA — sem evidência = NÃO É DONE:**
+A evidência deve provar que a EXPERIÊNCIA DO USUÁRIO funciona, não que o código mudou:
+- ERRADO: "normalizeKeys applied" / "SF updated"
+- CERTO: "Executei SF criarNegociacao com input {titulo:'Teste', produto:'MITRA', cnpj:'12345678000100'} → affectedRows=1. SELECT NEGOCIACOES WHERE TITULO='Teste' retorna 1 row."
+
+Para cada bug DONE, o Dev deve ter feito UM destes testes:
+- `executeServerFunctionMitra` com input REAL (não vazio) → resultado esperado
+- `runQueryMitra` com SELECT confirmando que o dado persistiu
+- `curl` na URL pública confirmando HTTP 200
+- Contagem antes/depois da ação confirmando incremento
 
 **Round matador**: se o QA te mandou N bugs, feche TODOS no MESMO round. Entregar R2 com 3 bugs pendentes = R3 inevitável. Meta mundo-perfeito é 2 rounds totais (R1 + R2 matador). Cada round a mais é perda de tokens.
 
