@@ -260,6 +260,22 @@ Isso tá documentado no `SETUP.md` Passo 0. Se o Usuário estiver subindo uma f�
 
 ## 9. Fluxo Dev⇄QA (o coração da fábrica)
 
+### 9.0 IMPORTANTE: Como otimizar a quantidade de rounds
+
+Cada round desperdiçado custa ~80-100 minutos e tokens. A meta é 2-3 rounds. Regras para evitar R4+:
+
+1. **Lote MÁXIMO de bugs por round.** Nunca dividir bugs em rounds pequenos (5 bugs cada). Opus 4.6 aguenta 30+ bugs num round. 1 round com 30 bugs > 5 rounds com 6 bugs.
+
+2. **Bugs descritos como experiência do usuário**, não como fix técnico. "Usuário clica X, nada acontece" > "UPPERCASE keys na SF". O Dev testa pela perspectiva do usuário.
+
+3. **Evidência de teste obrigatória.** Dev marca DONE só com: executeServerFunctionMitra com input REAL → affectedRows=1, ou SELECT confirmando dado persistiu. Sem evidência = não é DONE.
+
+4. **Anti-regressão:** no briefing R2+, listar funcionalidades que JÁ funcionam. Dev re-testa TODAS após os fixes. Se regressão → não entrega.
+
+5. **Sanity check rigoroso pré-QA (seção 13).** Coordenador roda os 5 curls + login SDK + verifica bundle ANTES de gastar QA. Se falha → rejeita Dev direto.
+
+6. **Investigação antes de delegação.** Se bug volta pela 2a vez, Coordenador para, faz curl/grep no bundle, lê a SF, identifica causa raiz. Só então delega.
+
 ### 9.1 Meta de rounds
 
 - **Ótimo**: 2 rounds. R1 Dev one-shot → R1 QA reprova com bugs → R2 Dev matador → R2 QA aprova.
