@@ -71,6 +71,8 @@ Começar em 10. Cada violação desconta:
 | 23 | **Zero menções falsas a workers** | Grep bundle por palavras "worker", "automação", "agendamento", "cron" em labels/botões visíveis. Se aparecem botões/menus que levam a funcionalidades de worker mas o sistema não implementa workers → -3. Botão que promete e não entrega = pior que não ter o botão. | -3 |
 | 24 | **Nomenclatura "Mitra - {nome}"** | Título do sistema no header/sidebar/login DEVE seguir padrão "Mitra - {nome}". Login NÃO pode ser landing page promocional (seções, CTAs, testimonials). Login = logo + campos + botões persona + toggle tema. | -2 |
 | 25 | **Zero "Relatório" na terminologia** | Grep bundle por "Relatório" ou "Relatórios" em menus/títulos. Deve usar "Indicadores" ou "Dashboards". "Gerar Relatório" → "Exportar PDF/Excel". | -1 |
+| 26 | **Dark mode: zero bg-white em dark** | Ativar dark mode. Via Playwright, contar elementos com `backgroundColor === 'rgb(255, 255, 255)'`: `page.$$eval('*', els => els.filter(e => getComputedStyle(e).backgroundColor === 'rgb(255, 255, 255)').length)`. Deve ser 0. Qualquer elemento branco em dark mode = bug visual grave. | -3 |
+| 27 | **Padding interno: zero componente encostado** | Verificar que nenhum input, botão, tabela ou card encosta diretamente na borda do container pai. Cards devem ter `p-4`+, cells `px-3 py-2`+, modais `p-6`+. Componente colado na borda = visual amador. | -2 |
 
 **Nota Design = max(0, 10 - soma dos descontos)**. Se < 8, REPROVA o sistema inteiro.
 
