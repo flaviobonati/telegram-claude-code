@@ -421,6 +421,56 @@ Se você só aceita string, o sistema vai crashar com `t.getTime is not a functi
 
 ---
 
+## 10.3. Server Functions PÚBLICAS (sem autenticação)
+
+Para endpoints que precisam funcionar SEM token (login, forms públicos, LPs, webhooks, descadastro LGPD, rastreamento):
+
+**1. Marcar como pública no backend:**
+```javascript
+import { togglePublicExecutionMitra } from 'mitra-sdk';
+await togglePublicExecutionMitra({ projectId, serverFunctionId, publicExecution: true });
+```
+
+**2. Chamar com `executePublicServerFunctionMitra` (NÃO `executeServerFunctionMitra`):**
+```javascript
+import { configureSdkMitra, executePublicServerFunctionMitra } from 'mitra-interactions-sdk';
+
+// Configurar SEM token — só baseURL e projectId
+configureSdkMitra({
+  baseURL: import.meta.env.VITE_MITRA_BASE_URL,
+  projectId: Number(import.meta.env.VITE_MITRA_PROJECT_ID),
+});
+
+const res = await executePublicServerFunctionMitra({
+  projectId, serverFunctionId, input: {}
+});
+```
+
+**3. Parsear output (formato DIFERENTE da SF normal):**
+```javascript
+// SF pública: res.output (string JSON)
+// SF normal: res.result.output
+let output = res?.output || res?.result?.output;
+if (typeof output === 'string') { try { output = JSON.parse(output); } catch {} }
+const rows = output?.rows || (Array.isArray(output) ? output : []);
+```
+
+**4. Rota pública FORA do guard de auth no App.tsx:**
+```jsx
+<Routes>
+  <Route path="/lp/:slug" element={<LpPublicPage />} />  {/* FORA do guard */}
+  <Route path="/form/:id" element={<FormPublicPage />} />
+  {configured ? ( /* rotas autenticadas */ ) : ( /* redirect login */ )}
+</Routes>
+```
+
+**Erros comuns:**
+- Usar `executeServerFunctionMitra` em vez de `executePublicServerFunctionMitra` → 403
+- Chamar `initMitra()` antes → configura com token vazio, header auth inválido
+- Acessar `res.result.output.rows` em vez de `res.output` → undefined
+
+---
+
 ## 11. Autenticação (não pular)
 
 O template frontend tem `src/lib/mitra-auth.ts` com fluxo completo. **NUNCA hardcode tokens no código.** Use o fluxo de auth do template.
