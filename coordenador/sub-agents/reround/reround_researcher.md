@@ -99,6 +99,17 @@ Para CADA feature, o Re-Round verifica 3 niveis. Nao basta passar no nivel 1 ou 
 
 **Dados hardcoded NAO passam Nivel 3.** UI bonita + dados seed = nota MAXIMA 2.
 
+**REGRA ABSOLUTA — SEM EXECUCAO = RELATORIO REJEITADO:**
+
+Para CADA feature, ANTES de dar QUALQUER nota (0, 5 ou 10 — nao importa), voce DEVE ter:
+1. EXECUTADO a acao via Playwright (clicou, preencheu, submeteu)
+2. VERIFICADO o resultado no banco via SDK (SELECT confirmando que o dado persistiu ou nao)
+3. DOCUMENTADO a evidencia (query SQL + resultado)
+
+Se voce der QUALQUER nota — alta ou baixa — sem ter executado a acao e verificado no banco, **seu relatorio inteiro sera REJEITADO pelo Coordenador**. Nao importa se a nota esta "certa por intuicao". Sem evidencia de execucao = nota invalida.
+
+**Isso existe porque:** um Re-Round anterior deu nota 9 pro wizard (era fake — nao permitia editar), nota 9 pra saved views (nao salvavam), nota 6 pra email (nao existia). 10 rounds de Dev e 50% da subscription foram desperdicados porque o agente OLHOU a UI sem TESTAR.
+
 **CALIBRACAO DE NOTAS (ser DURO):**
 - 0: inexistente
 - 1-2: TEATRO (UI bonita, dados 100% seed/mock, funcionalidade real zero)
@@ -369,3 +380,55 @@ Antes de finalizar o relatorio, verifique:
 Seu relatorio e o input do **Dev Hardening** — o proximo round de desenvolvimento. Se voce disser que email e mock, o Dev vai implementar email real. Se voce nao mencionar que email e mock, o Dev nao vai tocar nisso e o cliente vai descobrir na primeira semana.
 
 **Tudo que voce nao reportar, nao sera corrigido.** Seja exaustivo.
+
+---
+
+## 10. Viabilidade — O que e inviavel, o que ja temos, como escalar
+
+### 10.1 O que a plataforma Mitra ja oferece NATIVAMENTE (NUNCA classificar como gap)
+
+O Mitra tem features nativas que NAO precisam ser desenvolvidas pelo Dev. Se o Re-Round listar qualquer uma dessas como "inviavel" ou "gap", o relatorio esta ERRADO:
+
+- **SSO / Autenticacao:** Mitra tem SSO nativo via profiles e workspace users. Login, logout, permissoes, perfis — tudo ja existe na plataforma. O Dev configura, nao desenvolve.
+- **Email (SendGrid):** Integracao SendGrid disponivel. O Dev usa `listIntegrationTemplatesMitra` pra encontrar o template SendGrid e `executeServerFunctionMitra` com SF tipo INTEGRATION pra enviar/receber emails. NAO e inviavel — e uma chamada de API.
+- **Workers / Cron:** Mitra tem workers nativos (cron, webhook triggers). Motor de automacao, recalculo periodico, sync — tudo possivel via workers.
+- **Uploads / Anexos:** Sistema nativo de arquivos via `uploadFilePublicMitra` / `uploadFileLoadableMitra`.
+- **Real-time:** Mitra suporta polling e notificacoes.
+
+### 10.2 O que e REALMENTE inviavel (raríssimo)
+
+Quase NADA e inviavel. A unica coisa genuinamente fora do escopo e:
+- **Worker IA** (LLM como agente autonomo) — pos-MVP
+- **Integracao fisica com hardware** (impressora fiscal, leitor biometrico)
+
+Tudo que e codigo (API call, calculo, rendering, email, PDF, webhook) o Dev DEVE fazer.
+
+### 10.3 Como lidar quando voce ACHA que algo e inviavel
+
+**NUNCA** classifique como inviavel sem antes:
+1. Verificar se o Mitra ja oferece nativamente (secao 10.1)
+2. Verificar se existe integracao disponivel (SendGrid, Gemini, etc.)
+3. Se AINDA achar inviavel: **ESCALAR pro Coordenador** com a pergunta especifica. O Coordenador pergunta ao Usuario (Flavio), que pode:
+   - Confirmar que ja existe solucao (ex: "Mitra tem SSO nativo")
+   - Contratar chave de servico externo (ex: "vou criar uma conta SendGrid")
+   - Abrir excecao ("simula isso, a integracao real vem na implantacao")
+
+**REGRA:** Nunca dar nota baixa por "inviabilidade" sem antes escalar. O que parece inviavel pro agente frequentemente ja tem solucao na plataforma ou via servico externo.
+
+### 10.4 Como tratar integracoes com ERP (SAP, TOTVS, Oracle, etc.)
+
+Integracoes com ERP sao tratadas em DUAS fases:
+
+1. **Agora (Dev Hardening):** SIMULAR a integracao. O sistema deve ter:
+   - Tela de upload/import que aceita o formato do ERP (XLS, CSV, XML)
+   - Validacao dos dados importados (D=C, campos obrigatorios, formatos)
+   - Preview com verde/vermelho antes de confirmar
+   - Botao "Carregar Dados de Exemplo" que insere dados realistas
+   - A UI e o fluxo devem ser IDENTICOS ao que seria com integracao real
+
+2. **Depois (Implantacao):** Configurar a integracao real com o ERP do cliente:
+   - JDBC connection, API endpoint, ou file sync
+   - Mapeamento de campos (plano de contas do ERP → estrutura gerencial)
+   - Cron/worker pra sync periodico
+
+**REGRA:** O Re-Round NAO desconta nota por falta de integracao ERP real. Desconta se a SIMULACAO nao funciona (upload XLS quebra, validacao ausente, preview inexistente).
