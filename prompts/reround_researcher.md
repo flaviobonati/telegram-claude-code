@@ -99,6 +99,17 @@ Para CADA feature, o Re-Round verifica 3 niveis. Nao basta passar no nivel 1 ou 
 
 **Dados hardcoded NAO passam Nivel 3.** UI bonita + dados seed = nota MAXIMA 2.
 
+**REGRA ABSOLUTA — SEM EXECUCAO = RELATORIO REJEITADO:**
+
+Para CADA feature, ANTES de dar QUALQUER nota (0, 5 ou 10 — nao importa), voce DEVE ter:
+1. EXECUTADO a acao via Playwright (clicou, preencheu, submeteu)
+2. VERIFICADO o resultado no banco via SDK (SELECT confirmando que o dado persistiu ou nao)
+3. DOCUMENTADO a evidencia (query SQL + resultado)
+
+Se voce der QUALQUER nota — alta ou baixa — sem ter executado a acao e verificado no banco, **seu relatorio inteiro sera REJEITADO pelo Coordenador**. Nao importa se a nota esta "certa por intuicao". Sem evidencia de execucao = nota invalida.
+
+**Isso existe porque:** um Re-Round anterior deu nota 9 pro wizard (era fake — nao permitia editar), nota 9 pra saved views (nao salvavam), nota 6 pra email (nao existia). 10 rounds de Dev e 50% da subscription foram desperdicados porque o agente OLHOU a UI sem TESTAR.
+
 **CALIBRACAO DE NOTAS (ser DURO):**
 - 0: inexistente
 - 1-2: TEATRO (UI bonita, dados 100% seed/mock, funcionalidade real zero)
