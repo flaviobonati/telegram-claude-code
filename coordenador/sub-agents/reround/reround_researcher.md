@@ -128,13 +128,13 @@ Para CADA feature MUST, o Re-Round escreve:
 2. **Como funciona no NOSSO** — narrativa de 2-4 frases descrevendo o que acontece no nosso sistema quando voce tenta fazer a mesma coisa. Ser HONESTO: se eh hardcoded, dizer. Se nao funciona, dizer.
 3. **Nota Incumbente** — sempre 10 (benchmark)
 4. **Nota Nosso** — de 0 a 10, respondendo: "quao BOM DE USAR e quao COMPLETO eh o nosso comparado ao incumbente?" 0=teatro/inexistente, 5=basico funcional, 10=paridade ou superior
-5. **Gap** — o que falta pra igualar (em 1 frase)
+5. **Gap (ESPECIFICACAO TECNICA PRO DEV)** — NAO eh "1 frase vaga". Eh uma especificacao detalhada de TUDO que o Dev precisa implementar pra essa feature chegar a nota 10. O Dev vai ler APENAS esta coluna como briefing de trabalho — se estiver vago, ele vai inventar cosmeticos em vez de resolver o problema real. Incluir: quais componentes React criar/alterar, quais SFs precisam existir (nome + tipo SQL/JS/INTEGRATION), qual o fluxo de dados (input → transformacao → output), qual o resultado esperado que o proximo Re-Round vai verificar.
 
 ```
-| Feature | No Incumbente | No Nosso | Nota Inc. | Nota Nosso | Gap |
-|---------|--------------|---------|-----------|-----------|-----|
-| Landing Pages | Editor drag-drop com 12 componentes, galeria de templates, preview responsivo, publica em subdominio com SSL, visitante preenche form, lead entra com UTMs automaticos | Lista 6 LPs. Form cria com titulo+conteudo. Sem editor visual, sem preview, sem URL publica funcional | 10 | 2 | Editor visual + serving publico |
-| Automacoes | Canvas visual react-flow: trigger > espera > email > condicao > acao. Motor executa 24/7. 15+ tipos de acao | Lista 9 automacoes hardcoded. Canvas existe mas nao cria fluxo real, nao executa nenhuma acao | 10 | 1 | Construtor funcional + motor execucao |
+| Feature | No Incumbente | No Nosso | Nota Inc. | Nota Nosso | Gap (especificacao pro Dev) |
+|---------|--------------|---------|-----------|-----------|----------------------------|
+| Email-to-Ticket | Zendesk recebe email via SMTP, cria ticket automatico com CANAL=email, threading por In-Reply-To, anti-spam, attachments inline | Botao "Simular Email" cria ticket fake. Nenhum email entra ou sai do sistema. 100% simulacao. | 10 | 0 | Dev: (1) Criar SF INTEGRATION 'emailInboundWebhook' que recebe POST do SendGrid Inbound Parse com from/subject/body/attachments. (2) SF parseia e chama inserirTicket com CANAL='email'. (3) Criar SF INTEGRATION 'enviarEmailResposta' que envia reply via SendGrid API. (4) Frontend: /configuracoes/canais com CRUD de enderecos de suporte vinculados a filas. (5) Verificacao: enviar email real → ticket aparece na bandeja em <30s. |
+| Saved Views | Zendesk: usuario cria view com filtros, salva com nome, aparece no menu lateral, compartilhavel | Botao "Salvar view atual" existe mas NAO persiste. Ao recarregar pagina, view some. | 10 | 1 | Dev: (1) Verificar SF inserirViewSalva — esta sendo chamada? Inspecionar payload. (2) Se SF funciona mas frontend nao recarrega: chamar listarViewsSalvas no mount da pagina. (3) Verificacao: salvar view → recarregar pagina → view ainda aparece na lista. |
 | Pipeline Kanban | Kanban com drag-drop, filtros por time, card com valor/SLA, detalhe com timeline | 24 cards draggable, 2 pipelines, detalhe com timeline + IA proxima acao. Supera incumbente | 10 | 10 | Nenhum (supera) |
 ```
 

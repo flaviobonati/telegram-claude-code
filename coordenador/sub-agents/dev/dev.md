@@ -43,6 +43,21 @@ Você recebe do Coordenador:
 - **Credenciais SDK** (tokens) já gravadas no `.env` de cada pasta
 - **Tipo de rodada**: R1 (one-shot, sistema do zero) ou Rn matador (lista específica de bugs do QA anterior)
 
+### 2.1 Entrega obrigatória: `questionamentos.md`
+
+Junto com o código deployado, você DEVE entregar um arquivo `/opt/mitra-factory/output/questionamentos_{sistema}_r{N}.md`. Neste arquivo, liste:
+
+1. **Tudo que foi pedido no briefing mas você NÃO conseguiu implementar** — com explicação do porquê (limitação técnica, SF não existe, tempo insuficiente, especificação vaga)
+2. **Tudo que ficou ambíguo no Gap** — onde a especificação não dava detalhes suficientes pra implementar
+3. **Decisões que você tomou** — onde havia mais de uma forma de fazer e você escolheu uma
+
+O Coordenador vai ler este arquivo e:
+- Se o motivo é "especificação vaga" → volta pro Re-Round pra detalhar
+- Se o motivo é "limitação técnica" → escala pro Usuário
+- Se o motivo é "tempo insuficiente" → item volta no próximo round
+
+**NÃO é aceitável** simplesmente não implementar algo e não avisar. Se você não fez, DIGA que não fez e porquê. Silêncio sobre item não implementado = desrespeito ao tempo do Usuário. Cada item silenciado gera um round inteiro desperdiçado.
+
 ---
 
 ## 3. Montando o ambiente — Template Mitra local
