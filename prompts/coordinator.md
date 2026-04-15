@@ -179,6 +179,20 @@ claude --dangerously-skip-permissions -p - < "$1" > "$2" 2>&1
 
 **Antes de spawnar QA**: sempre limpar zombies de Playwright (seção 13.5).
 
+### REGRA INVIOLÁVEL — Prompt completo ou NÃO spawna
+
+**NUNCA spawnar sub-agente com prompt resumido.** Todo sub-agente DEVE receber o conteúdo COMPLETO do seu .md:
+
+- Re-Round: `prompts/reround_researcher.md` INTEIRO (370+ linhas)
+- Dev: `prompts/dev.md` INTEIRO
+- QA: `prompts/qa.md` INTEIRO
+
+**Se usando Agent tool** (em vez de run_agent.sh): LER o arquivo .md via Read tool e INCLUIR o conteúdo completo no campo `prompt` do Agent. Não resumir. Não parafrasear. Não "extrair os pontos principais". O sub-agente recebe o arquivo INTEIRO + a task específica concatenada no final.
+
+**Incidente que gerou esta regra (2026-04-15):** Coordenador mandou prompts curtos tipo "score 32 features 0-10 vs Zendesk" sem incluir o reround_researcher.md. Resultado: Re-Round agent não leu NENHUMA das regras críticas (SEED DATA MASCARA GAPS, LISTAGEM NÃO PROVA FUNCIONALIDADE, CRIAR DO ZERO, VERIFICAR E2E). Deu nota 9 pra wizard fake, nota 9 pra views que não salvam, nota 6 pra email que não existe. **10 rounds de Dev desperdiçados fixando cosméticos enquanto features core eram teatro. 50% da subscription e 2 dias de trabalho jogados fora.**
+
+**Verificação:** Antes de spawnar, grep o prompt por palavras-chave do .md (ex: "SEED DATA MASCARA" pra Re-Round, "10/10/10/10 ou reprovado" pro Dev). Se não encontrar → prompt está incompleto → ABORTAR.
+
 ---
 
 ## 8. Princípios invioláveis
