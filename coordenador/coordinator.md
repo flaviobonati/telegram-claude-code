@@ -1024,21 +1024,53 @@ Esta seção registra **como o processo evoluiu** e **por que cada componente ex
 - **Ação destrutiva = confirmação literal**: NUNCA deletar projetos, dropar tabelas, sobrescrever deploys sem confirmar com o Usuário primeiro. Nasceu do incidente de deleção do Financial Close.
 - **Silent death dos subprocesses**: claude CLI com output grande pode truncar stdout a 1 byte. Workaround: Dev/QA escrevem relatório via Write tool (guaranteed flush) antes de imprimir stdout.
 
-### 19.6 Re-Round (Processo de Production-Grade)
+### 19.6 Re-Round (Processo de Production-Grade) — 5 PASSOS OBRIGATÓRIOS
 
 O Re-Round é o **retoque final** da fábrica. Transforma sistema 10/10/10/10 (demo-grade) em production-grade. É processo padrão, não one-off.
 
 **Princípio**: "Não expandir o produto — garantir que o core funciona 100% e está pronto pra implantação oficial." (Flávio, 2026-04-12)
 
-**3 fases**:
+**Os 5 passos do Re-Round (OBRIGATÓRIOS, nesta ordem):**
 
-1. **Re-Pesquisador** (prompt em `prompts/reround_researcher.md`): Volta ao INCUMBENTE PRINCIPAL do sistema (campo INCUMBENTE_PRINCIPAL na PIPELINE), lista TODAS as jornadas end-to-end que o incumbente faz, TESTA cada uma no nosso sistema via Playwright+SDK, identifica gaps. Output: relatório side-by-side (incumbente vs nosso) + % produção + gaps rankeados.
-2. **Dev Hardening**: Recebe gaps, corrige SEM adicionar features novas. Só fecha buracos vs incumbente.
-3. **QA Production-Grade**: Simula implantação real do zero — como se fosse consultor de implantação do incumbente.
+#### Passo 1 — Usuário pede Re-Round
+O Usuário diz "Re-Round do [sistema]". O Coordenador identifica o INCUMBENTE PRINCIPAL (campo na PIPELINE).
 
-**Regra chave**: Cada sistema tem 1 INCUMBENTE PRINCIPAL (campo no PIPELINE) definido pelo Usuário. O Re-Round é ancorado nesse incumbente. Sempre perguntar ao Usuário qual incumbente antes de rodar.
+#### Passo 2 — Re-Pesquisador lista features do INCUMBENTE (NÃO avalia o nosso)
+Spawnar Re-Pesquisador com `reround_researcher.md` COMPLETO. Neste passo ele APENAS:
+- Pesquisa o incumbente (WebSearch, docs, vídeos, reviews)
+- Lista TODAS as features com granularidade correta (cada canal separado, cada CRUD separado, etc.)
+- Para CADA feature: descreve COMO funciona no incumbente (3-5 frases com cliques, telas, resultado)
+- A soma de TODAS as features MUST deve representar 100% da operação do sistema
+- Ele **NÃO testa nosso sistema** neste passo — só mapeia o incumbente
 
-**Regra de aprovação do Re-Round**: qualquer feature MUST com nota < 10 (abaixo do incumbente) = volta OBRIGATORIAMENTE pro Dev Hardening. Não existe "aceitável com 7". Ou a feature está em paridade com o incumbente ou o Dev corrige. O Re-Round só aprova quando TODAS as features MUST estão com nota 10 na tabela comparativa.
+Output: arquivo com lista de features + descrições do incumbente.
+
+#### Passo 3 — Coordenador + Usuário validam a lista
+O Coordenador envia a lista pro Usuário via Telegram. Juntos, avaliam:
+- A lista cobre TUDO que importa pro sistema rodar?
+- As descrições são precisas?
+- Falta alguma feature que o cliente real vai precisar?
+- Alguma feature está granularizada demais ou de menos?
+
+**SÓ avança pro Passo 4 quando o Usuário aprovar a lista.** Se reprovar, volta pro Passo 2 com ajustes.
+
+#### Passo 4 — Re-Pesquisador avalia NOSSO sistema vs lista aprovada
+Spawnar Re-Pesquisador novamente com `reround_researcher.md` COMPLETO + lista aprovada. Agora sim ele:
+- Testa CADA feature no nosso sistema via Playwright (CRIAR do zero, EXECUTAR, VERIFICAR no banco)
+- Para CADA feature: nota 0-10 vs incumbente com EVIDÊNCIA de execução
+- Coluna Gap com ESPECIFICAÇÃO TÉCNICA pro Dev (não frase vaga)
+- Calcula % Production-Ready
+
+**REGRA: Qualquer nota sem evidência de execução = relatório REJEITADO.**
+
+#### Passo 5 — Ciclo Dev ⇄ Re-Round até 100%
+- Dev recebe gaps (lista COMPLETA, sem filtro) + `questionamentos.md` obrigatório
+- Re-Pesquisador reavalia
+- Repete até TODAS features MUST = nota 10
+
+**Regra de aprovação**: qualquer feature MUST com nota < 10 = volta pro Dev. O Re-Round só aprova quando TODAS as features MUST estão em paridade com o incumbente.
+
+**Regra chave**: Cada sistema tem 1 INCUMBENTE PRINCIPAL (campo no PIPELINE) definido pelo Usuário. Sempre perguntar ao Usuário qual incumbente antes de rodar.
 
 **Incumbentes confirmados pelo Usuário**:
 - ERP Core → Sankhya
