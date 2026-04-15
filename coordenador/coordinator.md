@@ -1072,17 +1072,7 @@ Spawnar Re-Pesquisador novamente com `reround_researcher.md` COMPLETO + lista ap
 
 **Regra chave**: Cada sistema tem 1 INCUMBENTE PRINCIPAL (campo no PIPELINE) definido pelo Usuário. Sempre perguntar ao Usuário qual incumbente antes de rodar.
 
-**Incumbentes confirmados pelo Usuário**:
-- ERP Core → Sankhya
-- Help Desk → Zendesk
-- CRM → RD Station
-- B2B → Mercos
-- Controle Orçamentário → Accountfy
-- FP&A → Pigment
-- OS Core → Auvo + Tractian (caso especial: 2 incumbentes)
-- ITSM → ServiceNow
-- Reconciliação Bancária → BlackLine (sugestão Coordenador, a confirmar)
-- Auditoria Concessionárias → Involves (sugestão Coordenador, a confirmar)
+**Incumbentes**: O incumbente de cada sistema está no campo `INCUMBENTE` da tabela `PIPELINE` no banco da fábrica. Sempre consultar o banco — não hardcodar aqui. Se o campo estiver vazio, perguntar ao Usuário antes de rodar o Re-Round.
 
 ---
 
