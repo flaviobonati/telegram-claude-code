@@ -1024,22 +1024,24 @@ Esta seção registra **como o processo evoluiu** e **por que cada componente ex
 - **Ação destrutiva = confirmação literal**: NUNCA deletar projetos, dropar tabelas, sobrescrever deploys sem confirmar com o Usuário primeiro. Nasceu do incidente de deleção do Financial Close.
 - **Silent death dos subprocesses**: claude CLI com output grande pode truncar stdout a 1 byte. Workaround: Dev/QA escrevem relatório via Write tool (guaranteed flush) antes de imprimir stdout.
 
-### 19.6 Re-Round (Processo de Production-Grade) — 7 PASSOS OBRIGATÓRIOS
+### 19.6 Re-Round (Processo de Production-Grade) — PASSOS OBRIGATÓRIOS
 
 O Re-Round é o **retoque final** da fábrica. Transforma sistema 10/10/10/10 (demo-grade) em production-grade. É processo padrão, não one-off.
 
 **Princípio**: "Não expandir o produto — garantir que o core funciona 100% e está pronto pra implantação oficial." (Flávio, 2026-04-12)
 
-**Os 7 passos do Re-Round (OBRIGATÓRIOS, nesta ordem):**
+**Os passos do Re-Round (OBRIGATÓRIOS, nesta ordem):**
 
 #### Passo 0 — Coordenador escreve HISTÓRIA DE USUÁRIO DIA 1 (OBRIGATÓRIO antes de qualquer Re-Round)
 
-Antes de começar o primeiro Re-Round, o Coordenador **é obrigado** a escrever a história de usuário do **primeiro dia**, end-to-end, que responde às 4 perguntas:
+Antes de começar o primeiro Re-Round, o Coordenador **é obrigado** a escrever a história de usuário do **primeiro dia**, end-to-end, descrevendo a jornada do usuário **clique por clique pela UI** (não apenas conceitos). A história responde às 4 perguntas:
 
-1. **Como é a melhor maneira de ingerir os dados?**
-2. **Se puxar de um sistema fonte, o que é puxado e o que o sistema consegue extrair automaticamente pra NÃO ter que fazer manual?**
-3. **Como os dados vão ser mantidos depois?** (fluxo de manutenção recorrente)
-4. **Qual é a história feliz de CADA usuário até cumprir seu primeiro objetivo?** (persona por persona, fluxo completo até entregar o primeiro valor real — não uma tela isolada, um fluxo inteiro)
+1. **Como é a melhor maneira de ingerir os dados?** — narrativa UI: qual tela o usuário abre primeiro, qual botão ele clica, qual modal aparece, qual dropdown escolhe, qual arquivo sobe, qual tela de confirmação vê, qual feedback recebe. Passo-a-passo concreto da ingestão, não conceitual.
+2. **Se puxar de um sistema fonte, o que é puxado e o que o sistema consegue extrair automaticamente pra NÃO ter que fazer manual?** — narrativa UI da inferência: qual botão/tela aciona a extração automática, quais campos o usuário revisa, quais pode ajustar, como o sistema confirma.
+3. **Como os dados vão ser mantidos depois?** (fluxo de manutenção recorrente) — narrativa UI: qual a sequência de cliques no fluxo mensal, qual tela/wizard/kanban, qual botão finaliza.
+4. **Qual é a história feliz de CADA usuário até cumprir seu primeiro objetivo?** (persona por persona) — narrativa UI completa: que tela cada persona abre, que ação faz, que tela chega no final. Do login ao valor entregue, sem pular interações.
+
+**Regra**: se a história pode ser implementada sem o usuário abrir o navegador, está incompleta. Cada passo narrado deve poder ser reproduzido por um QA seguindo o texto como roteiro de Playwright.
 
 **O Coordenador envia a história pro Usuário via Telegram e valida antes de ir pro Passo 1.** Sem validação da história = não inicia o Re-Round.
 
@@ -1084,6 +1086,7 @@ Para responder, o Coordenador avalia:
 1. O que o Re-Round avaliou que é EXAGERO pro Dia 1 e pode ser removido sem prejudicar o usuário final?
 2. O que o Re-Round NÃO avaliou mas é essencial pro bom funcionamento (usabilidade, mensagens de erro, performance, recovery, empty states, busca/filtros)?
 3. Qualquer tecnologia complexa que o Re-Round propôs tem que ser alinhada com o Usuário ANTES do Dev rodar.
+4. **Validação de Fluxo UI vs História (OBRIGATÓRIO)**: abrir a URL do sistema e navegar a rota principal (tipicamente o wizard de implantação) como cliente. Confirmar que a sequência de telas, vocabulário e ordem dos passos bate 1-a-1 com a história DIA 1. Se o wizard atual não reflete a história, ESSE é o item nº 1 da lista pro Dev (não polish — PRIORIDADE) e não pode ser marcado como "parcial" na próxima rodada.
 
 O Coordenador envia pro Usuário via Telegram a lista REVISADA (o que entra, o que sai, e o por quê objetivo de cada decisão). **SÓ avança pro Passo 5 quando o Usuário aprovar.**
 
@@ -1092,7 +1095,27 @@ O Coordenador envia pro Usuário via Telegram a lista REVISADA (o que entra, o q
 - Re-Pesquisador reavalia
 - Repete até TODAS features MUST = nota 10
 
-**Regra de aprovação**: qualquer feature MUST com nota < 10 = volta pro Dev. O Re-Round só aprova quando TODAS as features MUST estão em paridade com o incumbente (considerando o corte de overkill validado no Passo 4.5).
+**Regra de aprovação**: qualquer feature MUST com nota < 10 = volta pro Dev. O Re-Round só aprova quando TODAS as features MUST estão em paridade com o incumbente (considerando o corte de overkill validado no Passo 4.5). Nenhum item PARCIAL pode virar 🟢 — ou está 100% ou volta pro Dev.
+
+#### Passo 6 — QA IMPLANTADOR (obrigatório, último, antes de entregar pro Usuário)
+
+O QA IMPLANTADOR executa a história DIA 1 passo a passo, **EXCLUSIVAMENTE pela UI via Playwright**, simulando o cliente real.
+
+**Regras invioláveis:**
+
+a. **Execução do fluxo é SÓ pela UI**. SDK é PROIBIDO pra disparar a ação. SDK APENAS pra SELECT verificar persistência APÓS a ação na UI. Quem dispara é o Playwright navegando a URL como cliente.
+
+b. **Para CADA seção da história** (clique por clique descrito no Passo 0): abrir a rota esperada no browser, confirmar que o wizard/tela apresenta o passo que a história narra (mesmo vocabulário, mesma ordem, mesmo objetivo), clicar os botões como cliente, VER o resultado visualmente, e SÓ DEPOIS verificar no banco via SDK se persistiu.
+
+c. **Se QUALQUER passo do wizard/tela NÃO refletir o passo correspondente da história → nota ZERO automática**. Volta pro Dev com briefing específico: "wizard está desalinhado com história — refaça". Nota ZERO mesmo se o backend funciona, porque cliente real interage com UI, não com SQL.
+
+d. **Relatório só pode sair 🟢 IMPLANTÁVEL 100% se**: a navegação completa pela UI como cliente bateu 1-a-1 com a história (vocabulário, ordem, cliques, resultados).
+
+e. **Sem create-from-scratch = rejeitado**. Implantador deve criar entidades NOVAS do zero pela UI e executar o fluxo com elas, não confiar em dados seed. Seed mascara bugs do fluxo real.
+
+**Entrega do Implantador**: relatório `/opt/mitra-factory/output/implantador_{sistema}_report.md` com tabela passo-a-passo da história, status (✅/⚠/❌), evidência screenshot da UI + query SQL de persistência, e veredicto final (🟢 / 🟡 / 🔴).
+
+**Regra final**: só depois do Implantador emitir 🟢 o Coordenador entrega o sistema pro Usuário testar. Se 🟡 ou 🔴, volta pra Passo 5.
 
 **Regra chave**: Cada sistema tem 1 INCUMBENTE PRINCIPAL (campo no PIPELINE) definido pelo Usuário. Sempre perguntar ao Usuário qual incumbente antes de rodar.
 
