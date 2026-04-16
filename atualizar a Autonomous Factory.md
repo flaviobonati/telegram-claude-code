@@ -63,8 +63,8 @@ Pronto. Não precisa rebuild, restart de tmux nem nada. Próxima invocação do 
 | Tipo de mudança | O que fazer |
 |---|---|
 | **Mudou só `system_prompt.md` ou `AGENTS.md` ou `CLAUDE.md`** | `git pull` resolve. Próximo Dev spawnado já lê o novo. **Sistemas existentes não são afetados** (eles já receberam o briefing anterior). |
-| **Mudou `template/backend/` ou `template/frontend/`** | `git pull` resolve **pro próximo sistema novo**. **Sistemas existentes NÃO recebem a mudança automaticamente** — eles têm o template antigo já clonado no banco da AF do usuário (S3/storage). Pra propagar a mudança em sistema existente, é preciso rodar `pullFromS3` no Dev daquele sistema, aplicar o diff manual, e `deployToS3`. **Não fazer em massa** — cada sistema é uma decisão. |
-| **Mudou pacote npm de `template/frontend/package.json`** | `git pull` + se for sistema novo, próximo build já pega. Pra sistema existente, mesma regra acima. |
+| **Mudou `template/backend/` ou `template/frontend/`** | `git pull` atualiza o template LOCAL na VPS (`mitra-agent-minimal/template/`). O template é vendorizado no repo da fábrica — **não fica no S3**. Próximo `createProjectMitra` já clona a versão nova. **Sistemas existentes NÃO recebem a mudança automaticamente** — eles ficaram com a versão do template que estava vigente no momento em que foram criados. Pra propagar a mudança em sistema existente, num round futuro o Dev Agent tem que **copiar manualmente** os arquivos novos do `template/` local pro working dir do projeto e fazer `deployToS3`. `pullFromS3Mitra` NÃO serve pra trazer mudanças de template — ele traz o bundle deployado (recovery do working dir). **Não fazer em massa** — cada sistema é uma decisão. |
+| **Mudou pacote npm de `template/frontend/package.json`** | `git pull` + se for sistema novo, próximo build já pega (porque clona do template local). Pra sistema existente, mesma regra acima — Dev tem que adicionar a dep manualmente no `package.json` do projeto e rebuildar. |
 
 ---
 
