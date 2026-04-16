@@ -1101,6 +1101,20 @@ O Coordenador envia pro Usuário via Telegram a lista REVISADA (o que entra, o q
 
 O QA IMPLANTADOR executa a história DIA 1 passo a passo, **EXCLUSIVAMENTE pela UI via Playwright**, simulando o cliente real.
 
+**Inputs obrigatórios do briefing (sem os 4, briefing é rejeitado):**
+1. `qa.md` INTEIRO (25+ checagens visuais: fontes, cores, padrões, sombras, emojis, CamelCase, consistência, terminologia pt-BR, etc.)
+2. `coordinator.md` §19.6 Passo 6 (regras abaixo)
+3. `historia_implantacao_{sistema}.md` (fonte da verdade — vocabulário, ordem, objetivos)
+4. Último QA anterior (se houver — pra não re-testar o que já passou e pra validar fixes)
+
+**Relatório do QA tem 4 seções obrigatórias:**
+- **A) Visual** (qa.md — design, fontes, cores, padrões)
+- **B) Funcional** (Passo 6 UI — wizard, cliques, persistência)
+- **C) Performance** (tempos de resposta vs o que a história narra)
+- **D) Vocabulário/História** (alinhamento tela↔história)
+
+**Veredito = pior nota das 4 seções**. Qualquer P0 em qualquer seção = 🔴 (design porco é bloqueador, não cosmético).
+
 **Regras invioláveis:**
 
 a. **Execução do fluxo é SÓ pela UI**. SDK é PROIBIDO pra disparar a ação. SDK APENAS pra SELECT verificar persistência APÓS a ação na UI. Quem dispara é o Playwright navegando a URL como cliente.
