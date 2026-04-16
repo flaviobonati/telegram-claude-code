@@ -154,13 +154,9 @@ Está em `atualizar a Autonomous Factory.md` na raiz do repo. TL;DR:
 ```bash
 cd /opt/mitra-factory
 git pull
-# Reinicia o Coordenador no tmux:
-tmux send-keys -t mitra-coord:0 'C-c' Enter
-sleep 2
-tmux send-keys -t mitra-coord:0 'claude --dangerously-skip-permissions' Enter
 ```
 
-Próxima conversa o Coordenador de vocês já roda no padrão novo.
+Só isso. Os prompts (`.md`) são lidos do disco sob demanda — sem cache. Próxima conversa nova com o Coordenador de vocês já roda no padrão novo. Se quiser que a conversa ATUAL já aplique, peça via Telegram: "Lê o `coordenador/coordinator.md` atualizado e me resume o que mudou".
 
 ---
 

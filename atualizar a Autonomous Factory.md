@@ -11,14 +11,17 @@ Quando a mudança é **só em prompts** (`coordenador/coordinator.md`, `coordena
 ```bash
 cd /opt/mitra-factory
 git pull
-# Reinicia o Coordenador no tmux pra ele recarregar os prompts na próxima sessão
-tmux send-keys -t mitra-coord:0 'C-c' Enter   # mata o claude code atual
-tmux send-keys -t mitra-coord:0 'claude --dangerously-skip-permissions' Enter
 ```
 
-Pronto. A próxima vez que o Coordenador for invocado (via Telegram ou direto no tmux), ele já lê as regras novas.
+Só isso. Os prompts (`.md`) são lidos do disco sob demanda — o Claude Code não cacheia conteúdo entre invocações. Próxima conversa nova com o Coordenador já usa os prompts atualizados.
 
-> **Por quê funciona:** o Coordenador lê `coordenador/coordinator.md` e os prompts dos sub-agentes a cada sessão (instrução `auto memory` no início manda ler `prompts/coordinator.md`). Não há cache persistente — basta o arquivo no disco estar atualizado.
+**Quer forçar releitura na conversa CORRENTE** (sem esperar uma sessão nova)? Manda no Telegram pro seu Coordenador:
+
+> "Lê o `coordenador/coordinator.md` atualizado e me resume quais foram as mudanças."
+
+Ele relê do disco e ajusta. Sem precisar matar/reiniciar tmux.
+
+**Quando reiniciar o tmux faz sentido:** só se o Claude Code da AF travou, ficou inconsistente, ou você quer começar uma sessão totalmente limpa por algum outro motivo. Não é necessário pra puxar prompt novo.
 
 ---
 
@@ -42,13 +45,9 @@ A AF tem **dois lados** que podem precisar de atualização:
 ```bash
 cd /opt/mitra-factory
 git pull
-# Não precisa rebuild de nada. Reinicia só o tmux do Coordenador:
-tmux send-keys -t mitra-coord:0 'C-c' Enter
-sleep 2
-tmux send-keys -t mitra-coord:0 'claude --dangerously-skip-permissions' Enter
 ```
 
-Se o nome da sessão tmux for diferente, ajusta `mitra-coord:0` pro nome real (ex: `tmux ls` pra ver).
+Pronto. Não precisa rebuild, restart de tmux nem nada. Próxima invocação do Coordenador (e dos sub-agentes spawnados por ele) já lê o arquivo novo do disco. Se quiser que a conversa atual aplique imediatamente, peça pro Coordenador reler: "Lê o `coordenador/coordinator.md` atualizado".
 
 ### Front-end da AF — template do Dev Agent
 
@@ -69,27 +68,13 @@ Se o nome da sessão tmux for diferente, ajusta `mitra-coord:0` pro nome real (e
 
 ---
 
-## Quando precisar matar/reiniciar o Coordenador no tmux
-
-Se você não sabe se o Coordenador tá numa conversa ativa, **não mate cego** — pode interromper trabalho de meio-rodada. Verifica primeiro:
-
-```bash
-# Atacha no tmux e olha o que tá acontecendo:
-tmux attach -t mitra-coord
-# (Ctrl+B, depois D pra detachar sem matar)
-```
-
-Se tiver conversa ativa, pede pro Coordenador "salva o que tá fazendo, vou reiniciar pra puxar prompt novo" via Telegram, espera ele confirmar, e aí reinicia.
-
----
-
 ## Validação pós-atualização
 
-Depois do `git pull` + restart, manda no Telegram:
+Depois do `git pull`, manda no Telegram pro seu Coordenador:
 
-> "Quais são as 3 mudanças mais recentes nos prompts da fábrica?"
+> "Lê o `coordenador/coordinator.md` atualizado e me cita as 3 mudanças mais recentes do `git log`."
 
-O Coordenador deve responder citando os últimos 3 commits. Se ele citar algo de antes do `git pull`, **não pegou** — repita o restart do tmux.
+Ele deve responder citando os últimos commits incluindo o seu `git pull`. Se citar algo antigo, é porque ainda não releu o arquivo — peça explicitamente pra ele rodar `Read` no arquivo, ou abra uma conversa nova.
 
 ---
 
@@ -103,10 +88,10 @@ O Coordenador deve responder citando os últimos 3 commits. Se ele citar algo de
 
 ## Ajuda
 
-Se a AF não pegar a mudança mesmo após `git pull` + restart:
+Se a AF não pegar a mudança mesmo após `git pull`:
 
-1. Confirma que o `git pull` rodou no diretório certo: `cd /opt/mitra-factory && git log -1 --oneline` deve mostrar o commit novo
-2. Confirma que o tmux foi mesmo reiniciado: `tmux attach -t mitra-coord` e veja se há prompt novo do Claude Code (não a conversa antiga)
-3. Confirma que o Coordenador está lendo o arquivo certo: pede pra ele rodar `head -3 /opt/mitra-factory/coordenador/coordinator.md`
+1. Confirma que o `git pull` rodou no diretório certo: `cd /opt/mitra-factory && git log -1 --oneline` deve mostrar o commit novo no topo
+2. Confirma que o Coordenador está lendo o arquivo certo: pede pra ele rodar `head -3 /opt/mitra-factory/coordenador/coordinator.md` e te mandar a saída
+3. Se a conversa atual do Coordenador já carregou o `coordinator.md` antigo na memória da sessão, peça pra ele reler explicitamente (`Read coordenador/coordinator.md`) ou abra uma conversa nova
 
 Se ainda não funcionar, fala com Flávio.
