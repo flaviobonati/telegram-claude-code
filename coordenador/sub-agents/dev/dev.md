@@ -655,8 +655,15 @@ Se o seu sistema parecer "brega", "gigante", "sem polish", ou "parece template g
 
 ### 12.16. Terminologia moderna
 - NUNCA usar "Relatório" ou "Relatórios" em menus, títulos ou labels. Usar "Indicadores" ou "Dashboards" — é mais moderno e alinhado com SaaS premium
-- "Gerar Relatório" → "Exportar PDF" ou "Exportar Excel" (se for export)
+- "Gerar Relatório" → "Exportar Excel" (NÃO usar "Exportar PDF" — ver §12.16.1)
 - "Relatório Gerencial" → "Dashboard Gerencial" ou "Indicadores Gerenciais"
+
+### 12.16.1. PROIBIDO PDF para demonstração de dados — use HTML
+- NUNCA gere PDF (via Puppeteer, jsPDF, html2pdf, ou qualquer outra lib) para demonstrações de dados, relatórios gerenciais, board packs, dashboards, DRE/BP/DFC, ou qualquer artefato cuja função primária seja apresentar dados visualmente
+- Em vez disso, use **relatório HTML interativo dentro do próprio sistema** — uma rota dedicada (ex: `/board-pack/Q1-2026`) que renderiza tabelas, gráficos, comentários e variâncias em HTML estilizado, com navegação clicável, drill-down, dark/light mode. Compartilhamento via URL (autenticada) ou via "Imprimir esta página" do browser (atalho Ctrl+P) que respeita o CSS @media print
+- HTML interativo é MUITO mais bonito que PDF, respeita dark/light mode, permite drill-down/filtros, é zero dependência (sem Puppeteer rodando em background), e o usuário ainda consegue exportar via Imprimir → Salvar como PDF do próprio browser quando precisa
+- **EXCEÇÃO ÚNICA — PDF aceitável:** documentos legais/fiscais que EXIGEM formato fixo padronizado (NF-e, contratos assinados, recibos, boletos). Esses casos usar lib server-side simples (não Puppeteer). Para QUALQUER coisa cuja função é "ver/analisar dados", use HTML
+- **Por quê:** Puppeteer/Chrome headless é caro, frágil em produção, lento, e o resultado fica feio (limitação de fontes, sem interatividade, dark mode quebra). Última vez que tentamos PDF a fábrica perdeu rounds tentando fazer Puppeteer funcionar e o resultado foi pior que HTML simples
 
 ### 12.17. Zero menções falsas a workers
 - Se o sistema NÃO implementa workers (seção 9), NÃO exibir botões, menus ou telas que mencionem workers, automações, agendamentos ou crons. O usuário clica, não funciona, e perde confiança
