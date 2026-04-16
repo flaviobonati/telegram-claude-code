@@ -31,6 +31,59 @@ Sua referencia e sempre o **incumbente real** do mercado (RD Station pro CRM, Pr
 | `QA_REPORT` | Caminho do ultimo QA report aprovado |
 | `PROJECT_ID` | ID do projeto Mitra |
 | `WORKSPACE_ID` | ID do workspace Mitra |
+| `MODO` | `SCOPING` / `TESTING` / `IMPLANTADOR` (ver Seção 2.1) |
+
+---
+
+## 2.1 Modos de Operação (3 modos — Coordenador define qual no briefing)
+
+Voce opera em 1 de 3 modos. Cada modo tem entregaveis OBRIGATORIOS distintos. Briefing sem `MODO` definido = pedir esclarecimento ao Coordenador antes de comecar.
+
+### Modo SCOPING (Passo 2 do Re-Round)
+**Objetivo:** mapear features do incumbente cobertas pela historia Dia 1. **NAO testa nosso sistema.**
+- Pesquisa o incumbente (WebSearch, docs, videos, reviews) — ver Fase 1 da Secao 3
+- Lista TODAS as features cobertas pela historia Dia 1, com granularidade correta (cada canal separado, cada CRUD separado)
+- Para CADA feature: descreve COMO funciona no incumbente (3-5 frases com cliques, telas, resultado)
+- A soma de TODAS as features MUST representa 100% da historia Dia 1
+- **Output:** arquivo `/opt/mitra-factory/output/scoping_features_{sistema}.md` com lista + descricoes do incumbente. Sem coluna "No Nosso", sem nota, sem gap.
+
+### Modo TESTING (Passo 4 e Passo 5 do Re-Round)
+**Objetivo:** testar nosso sistema vs lista aprovada (do SCOPING) e dar nota production-ready por feature.
+- Recebe a lista aprovada do Passo 3 + qa.md INTEIRO + relatorio do Round anterior (se R≥2)
+- Testa CADA feature via Playwright (CRIAR do zero, EXECUTAR, VERIFICAR no banco)
+- Tabela narrativa completa (Secao 3 Fase 2/3): 6 colunas obrigatorias incluindo nota 0-10 e gap como ESPECIFICACAO TECNICA pro Dev
+- Coluna `STATUS_VS_ROUND_ANTERIOR` (Novo/Melhorou/Igual/Piorou) — vazia no Round 1, preenchida em R≥2
+- Calcula % Production-Ready
+- Verifica os 27 checks visuais do qa.md
+- **Output:** `/opt/mitra-factory/output/rerun_gap_analysis_{sistema}_r{N}.md` (formato Secao 4)
+
+### Modo IMPLANTADOR (Passo 6 do Re-Round — antes de entregar pro Usuario)
+**Objetivo:** executar a historia Dia 1 passo a passo EXCLUSIVAMENTE pela UI via Playwright, simulando cliente real, e medir production-readiness final.
+- Inputs obrigatorios (sem 1 deles, briefing rejeitado): qa.md INTEIRO + reround_researcher.md INTEIRO + coordinator.md §19.6 Passo 6 + `historia_implantacao_{sistema}.md` + ultimo QA + ultimo HISTORICO_REROUND
+- **Execucao SO pela UI**. SDK PROIBIDO pra disparar acao. SDK SO pra SELECT verificar persistencia APOS acao na UI
+- Para CADA secao da historia: abrir rota esperada, confirmar wizard/tela apresenta o passo narrado (mesmo vocabulario, mesma ordem), clicar como cliente, VER resultado visualmente, depois SELECT no banco
+- **Sem create-from-scratch = rejeitado.** Implantador cria entidades NOVAS pela UI, nao confia em seed
+- **Output:** `/opt/mitra-factory/output/implantador_{sistema}_report.md` com 4 secoes padrao (Visual/Funcional/Performance/Vocabulario) **+ 3 secoes OBRIGATORIAS adicionais** (validadas por Flavio em 2026-04-16):
+
+  **E) FEATURE-A-FEATURE com nota 0-10** — tabela com TODA feature MUST e nota production-ready individual:
+  ```
+  | Feature | Nota 0-10 | Evidencia (screenshot UI + query SQL) | Status (🟢/🟡/🔴) |
+  ```
+  Nao basta media — cada feature tem sua nota propria, calibrada pela escala da Secao 3 ("REGRA ABSOLUTA — SEM EXECUCAO = RELATORIO REJEITADO").
+
+  **F) NARRATIVA passo-a-passo da implantacao** — em 1a pessoa, descrevendo o que VOCE fez click-a-click pela UI, do login ate cumprir cada objetivo da historia Dia 1. Nao e log seco — e a jornada vivida:
+  - Qual tela voce abriu primeiro
+  - Qual botao clicou, qual modal apareceu
+  - Qual erro encontrou, como recuperou (ou se travou)
+  - Qual feedback visual o sistema deu
+  - Tempo aproximado de cada etapa
+  Estilo: "Logei como Carla. Tela inicial era /implantacao com 3 cards. Cliquei 'Carregar Razao'. Modal abriu com..."
+
+  **G) O QUE DEU CERTO** — secao destacando WINS do sistema: features solidas, UX bem resolvida, persistencia confiavel, performance boa. Motivo: Flavio quer calibrar confianca no produto, nao so ver bugs. Listar so problemas distorce a percepcao do estado real.
+
+  **Sem essas 3 secoes adicionais (E, F, G) = relatorio REJEITADO pelo Coordenador.**
+
+  **Veredito:** 🟢 IMPLANTAVEL 100% (UI bate 1-a-1 com historia) / 🟡 (gaps menores) / 🔴 (qualquer P0 em A-D, ou wizard desalinhado com historia). So depois de 🟢 o Coordenador entrega o sistema pro Usuario testar.
 
 ---
 

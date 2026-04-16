@@ -1060,6 +1060,8 @@ Antes de começar o primeiro Re-Round, o Coordenador **é obrigado** a escrever 
 
 **O Coordenador envia a história pro Usuário via Telegram e valida antes de ir pro Passo 0.5.** Sem validação da história = não inicia o Re-Round.
 
+**PERSISTÊNCIA OBRIGATÓRIA**: assim que a história é escrita (e antes de validar com o Usuário), o Coordenador grava o conteúdo COMPLETO do `historia_implantacao_{sistema}.md` na coluna `PIPELINE.HISTORIA_IMPLANTACAO` (TEXT) via `runDmlMitra` UPDATE. Motivo: vira aba na UI da AF pro Flávio consultar a qualquer momento. `patchRecordMitra` NÃO persiste TEXT grandes — usar SEMPRE `runDmlMitra`. Stripar emojis 4-byte (💡, 🟢, ▶, etc.) antes do UPDATE pra evitar erro de charset.
+
 #### Passo 0.5 — Coordenador pesquisa a JORNADA REAL DE IMPLANTAÇÃO do incumbente (OBRIGATÓRIO antes do Passo 1)
 
 Antes de spawnar qualquer Re-Pesquisador, o Coordenador faz **15-30 min de WebSearch direto** sobre como o incumbente é implantado de verdade no cliente — não como ele é vendido no marketing. Foco em:
@@ -1086,14 +1088,27 @@ Spawnar Re-Pesquisador com `reround_researcher.md` INTEIRO + `qa.md` INTEIRO + h
 
 Output: arquivo com lista de features + descrições do incumbente. Coordenador grava 1 linha em HISTORICO_REROUND com FASE='SCOPING'.
 
-#### Passo 3 — Coordenador + Usuário validam a lista
-O Coordenador envia a lista pro Usuário via Telegram. Juntos, avaliam:
+**PERSISTÊNCIA OBRIGATÓRIA**: o Coordenador grava o conteúdo COMPLETO da lista de features (com descrições do incumbente) na coluna `PIPELINE.LISTA_FEATURES_REROUND` (TEXT) via `runDmlMitra` UPDATE. Motivo: vira aba na UI da AF pro Flávio consultar a qualquer momento. Mesmas regras do Passo 0 (TEXT grande → `runDmlMitra`, stripar emojis 4-byte).
+
+#### Passo 3 — Coordenador AVALIA a lista em 3 buckets + envia pro Usuário (NUNCA cru)
+
+O Coordenador NUNCA despacha a lista do SCOPING crua pro Usuário. Antes de enviar, avalia CADA feature e classifica em 3 buckets:
+
+- **✅ O que tá CORRETO** — features alinhadas com a história Dia 1 e com a realidade do incumbente; cliente real vai precisar
+- **🤏 O que tá SIMPLISTA** — features listadas mas com descrição rasa, falta granularidade ou profundidade; precisa o Re-Pesquisador detalhar mais
+- **⚠️ O que tá OVERKILL** — features que extrapolam a história Dia 1 ou são vaidade vs. necessidade real do cliente
+
+Cada bucket com 3-7 bullets. Mensagem Telegram com 3 seções claras + recomendação final do Coordenador (entra como está / volta pro Passo 2 com ajustes específicos).
+
+**Por quê este passo existe**: sem avaliação do Coordenador, o Flávio recebe lista crua e tem que avaliar sozinho — perde-se o valor de ter o Coordenador no meio. (Validado por Flávio em 2026-04-16.)
+
+Juntos (Coordenador + Usuário) avaliam:
 - A lista cobre TUDO da história Dia 1?
 - As descrições são precisas?
 - Falta alguma feature que o cliente real vai precisar?
 - Alguma feature está granularizada demais ou de menos?
 
-**SÓ avança pro Passo 4 quando o Usuário aprovar a lista.** Se reprovar, volta pro Passo 2 com ajustes.
+**SÓ avança pro Passo 4 quando o Usuário aprovar a lista (revisada se necessário).** Se reprovar, volta pro Passo 2 com ajustes.
 
 #### Passo 4 — Re-Pesquisador modo TESTING (Round 1): avalia NOSSO sistema vs lista aprovada
 Spawnar Re-Pesquisador novamente com `reround_researcher.md` INTEIRO + `qa.md` INTEIRO + lista aprovada + história Dia 1. Agora sim ele:
@@ -1151,13 +1166,20 @@ O QA IMPLANTADOR executa a história DIA 1 passo a passo, **EXCLUSIVAMENTE pela 
 4. `historia_implantacao_{sistema}.md` (fonte da verdade — vocabulário, ordem, objetivos)
 5. Último QA anterior + último HISTORICO_REROUND (se houver — pra não re-testar o que já passou e pra validar fixes)
 
-**Relatório do QA tem 4 seções obrigatórias:**
+**Relatório do QA tem 4 seções padrão + 3 seções OBRIGATÓRIAS adicionais:**
+
+PADRÃO:
 - **A) Visual** (qa.md — design, fontes, cores, padrões)
 - **B) Funcional** (Passo 6 UI — wizard, cliques, persistência)
 - **C) Performance** (tempos de resposta vs o que a história narra)
 - **D) Vocabulário/História** (alinhamento tela↔história)
 
-**Veredito = pior nota das 4 seções**. Qualquer P0 em qualquer seção = 🔴 (design porco é bloqueador, não cosmético).
+ADICIONAIS (validadas por Flávio em 2026-04-16 — sem essas, relatório é REJEITADO):
+- **E) FEATURE-A-FEATURE com nota 0-10** — tabela com TODA feature MUST e nota production-ready individual (não só média). Cada linha: Feature | Nota 0-10 | Evidência (screenshot UI + query SQL) | Status (🟢/🟡/🔴)
+- **F) NARRATIVA passo-a-passo da implantação** — Implantador descreve em 1ª pessoa o que ele FEZ click-a-click pela UI, do login até cumprir cada objetivo da história Dia 1. Não é log seco — é a jornada vivida (qual tela ele abriu, qual botão clicou, qual erro encontrou, como recuperou)
+- **G) O QUE DEU CERTO** — seção destacando wins do sistema: features sólidas, UX bem resolvida, persistência confiável, performance boa. Motivo: Flávio quer calibrar confiança no produto, não só ver bugs. Se só listar problemas, distorce a percepção do estado real
+
+**Veredito = pior nota das 4 seções padrão (A-D)**. Qualquer P0 em qualquer seção = 🔴 (design porco é bloqueador, não cosmético). Seções E-G são obrigatórias mas informativas (não derrubam veredito por si sós — a nota individual de feature em E vira gap pro próximo Round).
 
 **Regras invioláveis:**
 
