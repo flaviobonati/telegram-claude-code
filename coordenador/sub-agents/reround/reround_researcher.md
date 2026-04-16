@@ -128,14 +128,15 @@ Para CADA feature MUST, o Re-Round escreve:
 2. **Como funciona no NOSSO** — narrativa de 2-4 frases descrevendo o que acontece no nosso sistema quando voce tenta fazer a mesma coisa. Ser HONESTO: se eh hardcoded, dizer. Se nao funciona, dizer.
 3. **Nota Incumbente** — sempre 10 (benchmark)
 4. **Nota Nosso** — de 0 a 10, respondendo: "quao BOM DE USAR e quao COMPLETO eh o nosso comparado ao incumbente?" 0=teatro/inexistente, 5=basico funcional, 10=paridade ou superior
-5. **Gap (ESPECIFICACAO TECNICA PRO DEV)** — NAO eh "1 frase vaga". Eh uma especificacao detalhada de TUDO que o Dev precisa implementar pra essa feature chegar a nota 10. O Dev vai ler APENAS esta coluna como briefing de trabalho — se estiver vago, ele vai inventar cosmeticos em vez de resolver o problema real. Incluir: quais componentes React criar/alterar, quais SFs precisam existir (nome + tipo SQL/JS/INTEGRATION), qual o fluxo de dados (input → transformacao → output), qual o resultado esperado que o proximo Re-Round vai verificar.
+5. **Status vs Round Anterior** — `Novo` (feature nova nesta lista), `Melhorou` (nota subiu vs Round anterior), `Igual` (mesma nota), `Piorou` (nota caiu — investigar regressao). Vazio no Round 1. Alimenta o detector de loop morto do Coordenador (§19.6 Passo 5 do coordinator.md).
+6. **Gap (ESPECIFICACAO TECNICA PRO DEV)** — NAO eh "1 frase vaga". Eh uma especificacao detalhada de TUDO que o Dev precisa implementar pra essa feature chegar a nota 10. O Dev vai ler APENAS esta coluna como briefing de trabalho — se estiver vago, ele vai inventar cosmeticos em vez de resolver o problema real. Incluir: quais componentes React criar/alterar, quais SFs precisam existir (nome + tipo SQL/JS/INTEGRATION), qual o fluxo de dados (input → transformacao → output), qual o resultado esperado que o proximo Re-Round vai verificar.
 
 ```
-| Feature | No Incumbente | No Nosso | Nota Inc. | Nota Nosso | Gap (especificacao pro Dev) |
-|---------|--------------|---------|-----------|-----------|----------------------------|
-| Email-to-Ticket | Zendesk recebe email via SMTP, cria ticket automatico com CANAL=email, threading por In-Reply-To, anti-spam, attachments inline | Botao "Simular Email" cria ticket fake. Nenhum email entra ou sai do sistema. 100% simulacao. | 10 | 0 | Dev: (1) Criar SF INTEGRATION 'emailInboundWebhook' que recebe POST do SendGrid Inbound Parse com from/subject/body/attachments. (2) SF parseia e chama inserirTicket com CANAL='email'. (3) Criar SF INTEGRATION 'enviarEmailResposta' que envia reply via SendGrid API. (4) Frontend: /configuracoes/canais com CRUD de enderecos de suporte vinculados a filas. (5) Verificacao: enviar email real → ticket aparece na bandeja em <30s. |
-| Saved Views | Zendesk: usuario cria view com filtros, salva com nome, aparece no menu lateral, compartilhavel | Botao "Salvar view atual" existe mas NAO persiste. Ao recarregar pagina, view some. | 10 | 1 | Dev: (1) Verificar SF inserirViewSalva — esta sendo chamada? Inspecionar payload. (2) Se SF funciona mas frontend nao recarrega: chamar listarViewsSalvas no mount da pagina. (3) Verificacao: salvar view → recarregar pagina → view ainda aparece na lista. |
-| Pipeline Kanban | Kanban com drag-drop, filtros por time, card com valor/SLA, detalhe com timeline | 24 cards draggable, 2 pipelines, detalhe com timeline + IA proxima acao. Supera incumbente | 10 | 10 | Nenhum (supera) |
+| Feature | No Incumbente | No Nosso | Nota Inc. | Nota Nosso | Status vs Round Anterior | Gap (especificacao pro Dev) |
+|---------|--------------|---------|-----------|-----------|--------------------------|----------------------------|
+| Email-to-Ticket | Zendesk recebe email via SMTP, cria ticket automatico com CANAL=email, threading por In-Reply-To, anti-spam, attachments inline | Botao "Simular Email" cria ticket fake. Nenhum email entra ou sai do sistema. 100% simulacao. | 10 | 0 | Igual (era 0 no Round 1) | Dev: (1) Criar SF INTEGRATION 'emailInboundWebhook' que recebe POST do SendGrid Inbound Parse com from/subject/body/attachments. (2) SF parseia e chama inserirTicket com CANAL='email'. (3) Criar SF INTEGRATION 'enviarEmailResposta' que envia reply via SendGrid API. (4) Frontend: /configuracoes/canais com CRUD de enderecos de suporte vinculados a filas. (5) Verificacao: enviar email real → ticket aparece na bandeja em <30s. |
+| Saved Views | Zendesk: usuario cria view com filtros, salva com nome, aparece no menu lateral, compartilhavel | Salva view, persiste, aparece ao recarregar. Falta compartilhamento entre usuarios. | 10 | 7 | Melhorou (era 1 no Round 1) | Dev: (1) Adicionar campo COMPARTILHADA na tabela VIEWS_SALVAS. (2) UI: toggle "Compartilhar com time" no modal de salvar. (3) Verificacao: usuario A salva view compartilhada → usuario B ve no menu. |
+| Pipeline Kanban | Kanban com drag-drop, filtros por time, card com valor/SLA, detalhe com timeline | 24 cards draggable, 2 pipelines, detalhe com timeline + IA proxima acao. Supera incumbente | 10 | 10 | Igual | Nenhum (supera) |
 ```
 
 **% Production-Ready = media das notas do Nosso / 10 × 100**. Feature com nota 0 puxa a media pra baixo. Feature com nota 10 contribui 100%.
@@ -179,11 +180,11 @@ Escrever o relatorio em `/opt/mitra-factory/output/rerun_gap_analysis_{sistema}.
 
 TODAS as features MUST listadas. NENHUMA coluna vazia.
 
-| Feature | No Incumbente | No Nosso | Nota Inc. | Nota Nosso | Gap |
-|---------|--------------|---------|-----------|-----------|-----|
-| [Feature 1] | [2-4 frases: como o usuario faz no incumbente, com cliques e resultado] | [2-4 frases: o que acontece no nosso quando tenta fazer o mesmo. Se hardcoded, dizer. Se nao funciona, dizer.] | 10 | [0-10] | [1 frase: o que falta] |
-| [Feature 2] | [...] | [...] | 10 | [...] | [...] |
-| ... | ... | ... | ... | ... | ... |
+| Feature | No Incumbente | No Nosso | Nota Inc. | Nota Nosso | Status vs Round Anterior | Gap |
+|---------|--------------|---------|-----------|-----------|--------------------------|-----|
+| [Feature 1] | [2-4 frases: como o usuario faz no incumbente, com cliques e resultado] | [2-4 frases: o que acontece no nosso quando tenta fazer o mesmo. Se hardcoded, dizer. Se nao funciona, dizer.] | 10 | [0-10] | [Novo/Melhorou/Igual/Piorou — vazio no Round 1] | [especificacao tecnica pro Dev: componentes, SFs, fluxo de dados, resultado esperado] |
+| [Feature 2] | [...] | [...] | 10 | [...] | [...] | [...] |
+| ... | ... | ... | ... | ... | ... | ... |
 
 **% Production-Ready = media das notas Nosso / 10 x 100**
 
@@ -199,49 +200,26 @@ Para cada feature com nota < 10:
 
 ---
 
-## 4.1. BASELINE DO QA — O Re-Round INCLUI tudo que o QA faz (e mais)
+## 4.1. BASELINE DO QA — Re-Round = QA + Re-Round (fonte unica: qa.md)
 
-O Re-Round NAO substitui o QA — ele ELEVA. Tudo que o QA verifica, o Re-Round tambem verifica. Se o QA pegaria um problema, o Re-Round DEVE pegar tambem. Alem de comparar com o incumbente, o Re-Round executa:
+O Re-Round NAO substitui o QA — ele ELEVA. Tudo que o QA verifica, o Re-Round tambem verifica.
 
-### Tabela de cobertura de botoes (mesma do QA)
+**O Coordenador concatena `qa.md` INTEIRO no seu briefing** (junto com este arquivo). Isso e regra inviolavel: voce sempre recebe os 27 checks visuais, as Regras A-H, a metodologia Playwright em 3 fases, as formulas de nota — direto da fonte unica `qa.md`. NAO duplicamos essas regras aqui pra evitar drift.
 
-Para CADA botao visivel no sistema, 3 colunas obrigatorias:
+**Sua entrega cobre 2 outputs:**
 
-| Rota | Botao | EXISTE? | TESTEI? | O QUE FAZ? | RESULTADO |
-|------|-------|---------|---------|------------|-----------|
+1. **Output Re-Round (proprio deste arquivo)**: tabela comparativa por feature (§3 Fase 2/3) com paridade vs incumbente, % Production-Ready, recomendacoes pro Dev Hardening.
 
-- **EXISTE?**: O botao esta visivel no DOM?
-- **TESTEI?**: Cliquei e esperei o resultado?
-- **O QUE FAZ?**: Explicacao em 1 frase da acao REAL. Se nao consegue explicar → decorativo → FAIL
-- Botao decorativo (Gerar PDF que nao gera, Enviar que nao envia) = GAP CRITICO
+2. **Output QA (regras de qa.md)**: tabela de cobertura de botoes, verificacao feature-por-feature, 27 checks visuais, wizards com CRUDs completos. **Veredito = pior nota dos dois outputs.** Qualquer P0 em qualquer um dos dois = REPROVADO.
 
-### Verificacao feature-por-feature (mesma do QA)
-
-Para CADA feature MUST da pesquisa original:
-
-| Feature MUST | Onde esta? | Testei? | Funciona end-to-end? | Evidencia |
-|---|---|---|---|---|
-
-Feature que "existe na UI" mas nao funciona de verdade = GAP
-
-### Checks visuais do QA (todos os 25)
-
-O Re-Round verifica os mesmos 25 checks de Design do QA:
-- Font-size, emojis, CamelCase, sombras, login, modais, logos, Chart.tsx, acentuacao, dark/light, controles custom, sidebar fixa, Handsontable, cards flat, contraste modal dark, workers falsos, nomenclatura, terminologia
-
-### Wizards
-
-- Todo wizard tem CRUDs completos (Add/Edit/Delete) nas entidades?
-- Todo passo do wizard tem funcionalidade REAL (nao apenas visualizacao)?
-- Botoes de acao dentro dos passos funcionam?
-
-### O que o Re-Round adiciona ALEM do QA
+### O que o Re-Round adiciona ALEM do qa.md
 
 - Comparacao fluxo-por-fluxo com o incumbente real
 - Teste com dados criados do zero (nao seed)
 - Verificacao de "tentaculos externos" (emails, LPs, formularios publicos, webhooks)
 - Calculo de % production-ready
 - Recomendacoes concretas de fix pro Dev Hardening
+- Coluna STATUS_VS_ROUND_ANTERIOR (Novo / Melhorou / Igual / Piorou) na tabela comparativa, alimentando o detector de loop morto do Coordenador (§19.6 Passo 5)
 
 ---
 
