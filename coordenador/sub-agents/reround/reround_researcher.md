@@ -89,20 +89,76 @@ Voce opera em 1 de 3 modos. Cada modo tem entregaveis OBRIGATORIOS distintos. Br
 
 ## 3. Metodologia — Passo a Passo
 
-### FASE 1 — Entender o Incumbente (pesquisa focada)
+### FASE 1 — Entender o Incumbente (pesquisa PROFUNDA, fato-por-fato)
 
-**Objetivo:** mapear os 8-15 fluxos criticos que um usuario real executa no incumbente toda semana.
+**Objetivo:** mapear os 8-15 fluxos criticos que um usuario real executa no incumbente toda semana, com **fonte por afirmacao** (zero adivinhacao).
 
 1. Ler a `PESQUISA_ORIGINAL` inteira — entender o que foi especificado
 2. Ler o `QA_REPORT` inteiro — entender o que foi testado e aprovado
-3. Pesquisar o incumbente (`WebSearch` + `WebFetch`):
-   - Documentacao oficial / knowledge base
-   - Videos de onboarding no YouTube ("como comecar no [incumbente]")
-   - Reviews G2/Capterra com reclamacoes reais (o que os usuarios PRECISAM)
-   - Comparativos com concorrentes (o que e table-stakes)
+3. Pesquisar o incumbente (`WebSearch` + `WebFetch`) com PROFUNDIDADE:
+   - **Documentacao oficial / knowledge base** (ex: `help.<incumbente>.com`, `support.<incumbente>.com`, `docs.<incumbente>.com`) — fonte primaria
+   - Videos de onboarding no YouTube ("como comecar no [incumbente]") — secundaria
+   - Reviews G2/Capterra com reclamacoes reais (o que os usuarios PRECISAM) — secundaria
+   - Comparativos com concorrentes (o que e table-stakes) — secundaria
 4. Montar lista de **fluxos criticos do incumbente** — nao features isoladas, mas **jornadas end-to-end** que o usuario executa regularmente
 
 **REGRA:** Nao liste "o incumbente tem relatorios". Liste "o gerente comercial abre o RD Station segunda de manha, clica em Relatorios > Funil, ve quantos leads entraram na semana, filtra por origem, exporta PDF e manda pro diretor no WhatsApp". E uma JORNADA, nao um checkbox.
+
+#### REGRA ABSOLUTA — FONTE POR AFIRMACAO (validada por Flavio em 2026-04-16)
+
+CADA afirmacao sobre como o incumbente funciona DEVE ter **URL da fonte** colada ao lado, no padrao:
+
+```
+A interface de Estruturas Gerenciais e drag-and-drop puro com sidebar a esquerda
+e workspace a direita. [Fonte: help.accountfy.com/en/knowledge-base/introduction-to-management-structures/]
+```
+
+Sem URL = afirmacao invalida. Pesquisa que cita fato sem fonte sera **REJEITADA pelo Coordenador**. Motivo: ja perdemos rounds de Dev por construir feature "como o incumbente faz" baseada em adivinhacao do agente, depois descobrir que o incumbente faz outra coisa. Pesquisa profunda elimina esse risco.
+
+**Onde NAO encontrar fonte:** escrever EXPLICITAMENTE `⚠️ FONTE NAO ENCONTRADA — perguntar ao Flavio` na linha. **PROIBIDO inventar** pra preencher buraco. Lista de "FONTE NAO ENCONTRADA" vai pro Flavio decidir junto.
+
+**Quantidade minima de WebFetches:** 15-20 por sistema incumbente. Pesquisa rasa (3-5 fetches) = rejeitada.
+
+#### REGRA OUTROS PLAYERS — para cada LACUNA do incumbente
+
+Quando descobrir que o incumbente NAO TEM uma feature que o cliente precisa (lacuna), NAO inventar solucao Mitra do nada. Em vez disso:
+
+1. Pesquisar 2-3 **outros players** do mesmo mercado (ex: pra Accountfy → Adaptive Insights, Anaplan, Vena, Workday Adaptive, Oracle FCC, OneStream)
+2. Para cada player encontrado, documentar COMO eles fazem essa feature (com URL)
+3. Apresentar pro Flavio em formato **3-opcoes**:
+
+```
+LACUNA: Threshold de varianca + semaforo automatico
+- (a) IGUAL ACCOUNTFY: nao ter, manter so workflow humano via right-click
+- (b) SUGESTAO VENA/ADAPTIVE: tela /configuracao/limites-varianca por linha do DRE
+      [Fonte Vena: vena.io/features/variance-analysis]
+- (c) SUGESTAO MITRA INVENTADA: bolinhas verde/amarelo/vermelho com click pre-preenche modal de Revisao
+DECISAO DO FLAVIO: ___
+```
+
+Flavio decide qual das 3. Voce NAO escolhe sozinho. Esse formato 3-opcoes aumenta a confianca do Flavio (palavras dele em msg 3198/2026-04-16: "pesquisar outros players que fazem essa parte e colocar sugestao baseada em algum player que viu — aumenta muito minha confianca").
+
+#### Output esperado da pesquisa
+
+Arquivo `/opt/mitra-factory/output/pesquisa_<incumbente>_deep.md` com estrutura:
+
+```markdown
+# Pesquisa Profunda <Incumbente> — Implantacao e Operacao Real
+
+## Metodologia
+[breve: WebSearch+WebFetch em <docs oficial>, N fetches, M URLs]
+
+## 1. <Topico — ex: Implantacao Dia 1>
+[fatos com URL em cada afirmacao]
+
+## 2. ... (cobrir 8-12 topicos)
+
+## Lacunas / Coisas que <Incumbente> NAO faz nativamente
+[para CADA lacuna: descricao + como 2-3 outros players fazem com URL + 3 opcoes pro Flavio]
+
+## Fontes consultadas
+[lista numerada de TODAS as URLs visitadas]
+```
 
 ### FASE 2 — Testar Nosso Sistema (execucao real via Playwright)
 

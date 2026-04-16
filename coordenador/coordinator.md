@@ -1081,13 +1081,29 @@ O Usuário diz "Re-Round do [sistema]". O Coordenador identifica o INCUMBENTE PR
 
 #### Passo 2 — Re-Pesquisador modo SCOPING: lista features do INCUMBENTE (NÃO testa o nosso)
 Spawnar Re-Pesquisador com `reround_researcher.md` INTEIRO + `qa.md` INTEIRO + história Dia 1 (incluindo o parágrafo do Passo 0.5). Neste passo ele APENAS:
-- Pesquisa o incumbente (WebSearch, docs, vídeos, reviews)
+- Pesquisa o incumbente (WebSearch, docs, vídeos, reviews) — **PROFUNDA**, ver regras §19.6.A abaixo
 - Lista TODAS as features COBERTAS PELA HISTÓRIA com granularidade correta (cada canal separado, cada CRUD separado, etc.)
-- Para CADA feature: descreve COMO funciona no incumbente (3-5 frases com cliques, telas, resultado)
+- Para CADA feature: descreve COMO funciona no incumbente (3-5 frases com cliques, telas, resultado) **+ URL da fonte**
 - A soma de TODAS as features MUST deve representar 100% da história Dia 1
 - Ele **NÃO testa nosso sistema** neste passo — só mapeia o incumbente
 
 Output: arquivo com lista de features + descrições do incumbente. Coordenador grava 1 linha em HISTORICO_REROUND com FASE='SCOPING'.
+
+##### §19.6.A — REGRAS DE PESQUISA PROFUNDA DO INCUMBENTE (validadas por Flávio em 2026-04-16)
+
+Antes de spawnar o Re-Pesquisador (modo SCOPING) ou de produzir HISTORIA_IMPLANTACAO no Passo 0, o Coordenador deve gerar (ou exigir) um arquivo `/opt/mitra-factory/output/pesquisa_<incumbente>_deep.md` com PESQUISA PROFUNDA. Regras:
+
+1. **FONTE POR AFIRMAÇÃO**: cada fato sobre o incumbente DEVE ter URL da docs oficial (`help.<x>.com`, `support.<x>.com`, `docs.<x>.com`) colada ao lado. Sem URL = fato inválido.
+2. **PROIBIDO INVENTAR**: onde NÃO encontrar fonte, escrever EXPLICITAMENTE `⚠️ FONTE NAO ENCONTRADA — perguntar ao Flávio`. Lista vai pro Flávio decidir junto.
+3. **PROFUNDIDADE MÍNIMA**: 15-20 WebFetches por sistema incumbente. Pesquisa rasa (3-5 fetches) = rejeitada.
+4. **OUTROS PLAYERS PARA LACUNAS**: quando o incumbente não tem feature que o cliente precisa, pesquisar 2-3 players concorrentes (ex: Adaptive Insights/Anaplan/Vena pra Accountfy; Freshdesk/Intercom/Jira pra Zendesk) com URL e propor sugestão baseada em FATO deles.
+5. **APRESENTAR LACUNAS PRO FLÁVIO EM 3-OPÇÕES**:
+   - (a) IGUAL INCUMBENTE (não fazer)
+   - (b) SUGESTÃO PLAYER X (com URL)
+   - (c) SUGESTÃO MITRA INVENTADA
+   Flávio decide qual das 3. Coordenador NUNCA escolhe sozinho.
+
+Detalhe completo: `coordenador/sub-agents/reround/reround_researcher.md` §3 Fase 1 (subseções "FONTE POR AFIRMACAO" e "OUTROS PLAYERS"). Razão histórica: pesquisas rasas levaram a histórias com features inventadas; Flávio explicitou em msg 3194/3198 que isso quebra confiança.
 
 **PERSISTÊNCIA OBRIGATÓRIA**: o Coordenador grava o conteúdo COMPLETO da lista de features (com descrições do incumbente) na coluna `PIPELINE.LISTA_FEATURES_REROUND` (TEXT) via `runDmlMitra` UPDATE. Motivo: vira aba na UI da AF pro Flávio consultar a qualquer momento. Mesmas regras do Passo 0 (TEXT grande → `runDmlMitra`, stripar emojis 4-byte).
 
