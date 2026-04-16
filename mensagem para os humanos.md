@@ -144,7 +144,6 @@ Entrega relatório com **4 seções padrão** (Visual / Funcional / Performance 
 - **Estrutura do repo:** continua a mesma. `coordenador/` tem os prompts, `mitra-agent-minimal/` tem o template do Dev Agent, `tg.mjs` faz Telegram bidirecional.
 - **Como rodar a fábrica:** continua igual — Coordenador no tmux, Telegram pra interagir, sub-agentes spawnados via `claude -p`.
 - **Banco da AF:** continua individualizado por instância. Mudanças nos prompts (back-end) não tocam o banco.
-- **Template do Dev Agent** (`mitra-agent-minimal/template/`) é vendorizado LOCAL no repo da fábrica, NÃO em S3. `git pull` atualiza o template local. `createProjectMitra` copia esse template pra cada projeto novo que a fábrica cria. **Sistemas já existentes não recebem update automático do template** — recebem a versão que estava vigente no momento da criação. Pra trazer mudanças do template pra um sistema existente, num round futuro, o Dev Agent tem que copiar manualmente os arquivos novos do `template/` pro working dir do projeto. `pullFromS3Mitra` NÃO serve pra isso (ele traz o bundle deployado, não o template).
 
 ---
 
