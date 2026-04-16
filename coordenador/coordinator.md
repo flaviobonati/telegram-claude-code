@@ -1024,30 +1024,41 @@ Esta seção registra **como o processo evoluiu** e **por que cada componente ex
 - **Ação destrutiva = confirmação literal**: NUNCA deletar projetos, dropar tabelas, sobrescrever deploys sem confirmar com o Usuário primeiro. Nasceu do incidente de deleção do Financial Close.
 - **Silent death dos subprocesses**: claude CLI com output grande pode truncar stdout a 1 byte. Workaround: Dev/QA escrevem relatório via Write tool (guaranteed flush) antes de imprimir stdout.
 
-### 19.6 Re-Round (Processo de Production-Grade) — 5 PASSOS OBRIGATÓRIOS
+### 19.6 Re-Round (Processo de Production-Grade) — 7 PASSOS OBRIGATÓRIOS
 
 O Re-Round é o **retoque final** da fábrica. Transforma sistema 10/10/10/10 (demo-grade) em production-grade. É processo padrão, não one-off.
 
 **Princípio**: "Não expandir o produto — garantir que o core funciona 100% e está pronto pra implantação oficial." (Flávio, 2026-04-12)
 
-**Os 5 passos do Re-Round (OBRIGATÓRIOS, nesta ordem):**
+**Os 7 passos do Re-Round (OBRIGATÓRIOS, nesta ordem):**
+
+#### Passo 0 — Coordenador escreve HISTÓRIA DE USUÁRIO DIA 1 (OBRIGATÓRIO antes de qualquer Re-Round)
+
+Antes de começar o primeiro Re-Round, o Coordenador **é obrigado** a escrever a história de usuário do **primeiro dia**, end-to-end, que responde às 4 perguntas:
+
+1. **Como é a melhor maneira de ingerir os dados?**
+2. **Se puxar de um sistema fonte, o que é puxado e o que o sistema consegue extrair automaticamente pra NÃO ter que fazer manual?**
+3. **Como os dados vão ser mantidos depois?** (fluxo de manutenção recorrente)
+4. **Qual é a história feliz de CADA usuário até cumprir seu primeiro objetivo?** (persona por persona, fluxo completo até entregar o primeiro valor real — não uma tela isolada, um fluxo inteiro)
+
+**O Coordenador envia a história pro Usuário via Telegram e valida antes de ir pro Passo 1.** Sem validação da história = não inicia o Re-Round.
 
 #### Passo 1 — Usuário pede Re-Round
 O Usuário diz "Re-Round do [sistema]". O Coordenador identifica o INCUMBENTE PRINCIPAL (campo na PIPELINE).
 
 #### Passo 2 — Re-Pesquisador lista features do INCUMBENTE (NÃO avalia o nosso)
-Spawnar Re-Pesquisador com `reround_researcher.md` COMPLETO. Neste passo ele APENAS:
+Spawnar Re-Pesquisador com `reround_researcher.md` COMPLETO + **história de usuário Dia 1 do Passo 0 como fonte da verdade dos fluxos**. Neste passo ele APENAS:
 - Pesquisa o incumbente (WebSearch, docs, vídeos, reviews)
-- Lista TODAS as features com granularidade correta (cada canal separado, cada CRUD separado, etc.)
+- Lista TODAS as features COBERTAS PELA HISTÓRIA com granularidade correta (cada canal separado, cada CRUD separado, etc.)
 - Para CADA feature: descreve COMO funciona no incumbente (3-5 frases com cliques, telas, resultado)
-- A soma de TODAS as features MUST deve representar 100% da operação do sistema
+- A soma de TODAS as features MUST deve representar 100% da história Dia 1
 - Ele **NÃO testa nosso sistema** neste passo — só mapeia o incumbente
 
 Output: arquivo com lista de features + descrições do incumbente.
 
 #### Passo 3 — Coordenador + Usuário validam a lista
 O Coordenador envia a lista pro Usuário via Telegram. Juntos, avaliam:
-- A lista cobre TUDO que importa pro sistema rodar?
+- A lista cobre TUDO da história Dia 1?
 - As descrições são precisas?
 - Falta alguma feature que o cliente real vai precisar?
 - Alguma feature está granularizada demais ou de menos?
@@ -1055,7 +1066,7 @@ O Coordenador envia a lista pro Usuário via Telegram. Juntos, avaliam:
 **SÓ avança pro Passo 4 quando o Usuário aprovar a lista.** Se reprovar, volta pro Passo 2 com ajustes.
 
 #### Passo 4 — Re-Pesquisador avalia NOSSO sistema vs lista aprovada
-Spawnar Re-Pesquisador novamente com `reround_researcher.md` COMPLETO + lista aprovada. Agora sim ele:
+Spawnar Re-Pesquisador novamente com `reround_researcher.md` COMPLETO + lista aprovada + história Dia 1. Agora sim ele:
 - Testa CADA feature no nosso sistema via Playwright (CRIAR do zero, EXECUTAR, VERIFICAR no banco)
 - Para CADA feature: nota 0-10 vs incumbente com EVIDÊNCIA de execução
 - Coluna Gap com ESPECIFICAÇÃO TÉCNICA pro Dev (não frase vaga)
@@ -1063,12 +1074,25 @@ Spawnar Re-Pesquisador novamente com `reround_researcher.md` COMPLETO + lista ap
 
 **REGRA: Qualquer nota sem evidência de execução = relatório REJEITADO.**
 
+#### Passo 4.5 — Coordenador AVALIA CRITICAMENTE o retorno do Re-Round (OBRIGATÓRIO antes do Dev)
+
+Quando o Re-Pesquisador devolve o gap analysis, o Coordenador **NÃO manda direto pro Dev**. Ele primeiro responde à pergunta-chave:
+
+> **"Essa lista de features está conectada com o objetivo do sistema, trazendo tudo que o sistema tem que trazer para cumprir um bom funcionamento para o usuário final e sem exageros?"**
+
+Para responder, o Coordenador avalia:
+1. O que o Re-Round avaliou que é EXAGERO pro Dia 1 e pode ser removido sem prejudicar o usuário final?
+2. O que o Re-Round NÃO avaliou mas é essencial pro bom funcionamento (usabilidade, mensagens de erro, performance, recovery, empty states, busca/filtros)?
+3. Qualquer tecnologia complexa que o Re-Round propôs tem que ser alinhada com o Usuário ANTES do Dev rodar.
+
+O Coordenador envia pro Usuário via Telegram a lista REVISADA (o que entra, o que sai, e o por quê objetivo de cada decisão). **SÓ avança pro Passo 5 quando o Usuário aprovar.**
+
 #### Passo 5 — Ciclo Dev ⇄ Re-Round até 100%
-- Dev recebe gaps (lista COMPLETA, sem filtro) + `questionamentos.md` obrigatório
+- Dev recebe task list REVISADA do Passo 4.5 (não o gap cru do Passo 4) + `questionamentos.md` obrigatório
 - Re-Pesquisador reavalia
 - Repete até TODAS features MUST = nota 10
 
-**Regra de aprovação**: qualquer feature MUST com nota < 10 = volta pro Dev. O Re-Round só aprova quando TODAS as features MUST estão em paridade com o incumbente.
+**Regra de aprovação**: qualquer feature MUST com nota < 10 = volta pro Dev. O Re-Round só aprova quando TODAS as features MUST estão em paridade com o incumbente (considerando o corte de overkill validado no Passo 4.5).
 
 **Regra chave**: Cada sistema tem 1 INCUMBENTE PRINCIPAL (campo no PIPELINE) definido pelo Usuário. Sempre perguntar ao Usuário qual incumbente antes de rodar.
 
