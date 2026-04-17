@@ -1043,19 +1043,55 @@ O Re-Round é o **retoque final** da fábrica. Transforma sistema 10/10/10/10 (d
 **Princípio**: "Não expandir o produto — garantir que o core funciona 100% e está pronto pra implantação oficial." (Flávio, 2026-04-12)
 
 **O Re-Round acontece em DUAS fases da máquina de estado** (§5):
-- **`preparacao_reround`** — Coordenador faz Passos 0-4 (escreve história Dia 1, pesquisa jornada real do incumbente, spawna Re-Pesquisador modo SCOPING, valida lista com Usuário). Não há ciclo Dev⇄QA aqui.
+- **`preparacao_reround`** — Coordenador faz Passos 0-4 (mapeia sistema atual, escreve história Dia 1 cobrindo TODAS as rotas do mapa, pesquisa jornada real do incumbente, spawna Re-Pesquisador modo SCOPING, valida lista com Usuário). Não há ciclo Dev⇄QA aqui.
 - **`execucao_reround`** — loop Dev ⇄ Re-Pesquisador modo TESTING (Passo 5) até convergir, depois QA Implantador (Passo 6).
 
 **Os passos do Re-Round (OBRIGATÓRIOS, nesta ordem):**
 
-#### Passo 0 — Coordenador escreve HISTÓRIA DE USUÁRIO DIA 1 (OBRIGATÓRIO antes de qualquer Re-Round)
+#### Passo 0 — MAPEAMENTO DO SISTEMA ATUAL (OBRIGATÓRIO antes de QUALQUER outro passo do Re-Round)
 
-Antes de começar o primeiro Re-Round, o Coordenador **é obrigado** a escrever a história de usuário do **primeiro dia**, end-to-end, descrevendo a jornada do usuário **clique por clique pela UI** (não apenas conceitos). A história responde às 4 perguntas:
+**Incidente 2026-04-17 (msgs 3315-3319 do Flávio):** Coordenador spawnou 3 rounds de Re-Pesq no HD e CO achando que o sistema só tinha as 18 features listadas no Round 2 baseline. Propôs construir Portal público + CSAT + KB + Gatilhos + Macros + SLAs como features "ausentes". TODAS JÁ EXISTIAM no repo. Re-Pesq nunca tinha testado. Notas 7.17 HD e 7.15 CO eram do subset de 18 features, NÃO do sistema inteiro — **notas FALSAS**. Flávio parou a fábrica.
+
+**Raiz do problema:** Coordenador tratou output do Re-Pesq como "fotografia do sistema" quando era "fotografia do subset testado". Nunca auditou o repo em Round 0.
+
+**Regra Flávio 2026-04-17 (msg 3318):** *"Não existe história de usuário sem você antes conhecer o que você já tem. Antes de escrever a primeira história você tem que, de fato, mapear o sistema inteiro. Depois sua história tem que conter tudo que o sistema tem. Depois o teste vai ser feito em cima da história completa e a nota vai ser mais justa."*
+
+**O que o Passo 0 exige:** produzir `/opt/mitra-factory/output/mapa_sistema_<sistema>.md` com:
+
+1. **TODAS as rotas do `App.tsx`** — cada `<Route path="…" element={…} />` com nome do componente e persona que acessa.
+2. **TODAS as pages em `/frontend/src/pages/`** — glob recursivo, cada `*Page.tsx` com 1 linha do que faz.
+3. **TODAS as SFs do backend** (`/backend/functions/`) — nome + 1 linha do que faz (lendo o código, não inventando).
+4. **TODAS as tabelas** (`runQueryMitra SHOW TABLES` + DESC nas de domínio) — nome + colunas principais + cardinalidade.
+5. **Estado de cada rota/page**: `funciona` / `bugado` / `vazio` / `nao-testado`. Só marcar `funciona` com Playwright + DB check. Sem teste = `nao-testado`.
+
+**Como executar (30-60 min por sistema):**
+- `pullFromS3Mitra` do bundle atual pra ter código na workspace.
+- Glob `/pages/**/*Page.tsx` + Read `App.tsx`.
+- Grep `/backend/functions/` pra nomes das SFs.
+- `runQueryMitra SHOW TABLES` + DESC nas tabelas de domínio.
+- Playwright spot-check nas rotas mais obscuras (teste profundo é Passo 4).
+
+**Vocabulário obrigatório — NUNCA confundir:**
+- `ausente_verificado` = grep deu 0 no repo. Posso propor construir.
+- `ausente_suposto` = NÃO verifiquei. PROIBIDO dizer "ausente" — tenho que verificar primeiro.
+- `nao-testado` = existe no repo mas Re-Pesq nunca rodou. Passa pro Passo 4 cobrir.
+
+**Output**: `mapa_sistema_<sistema>.md` enviado pro Usuário via Telegram. **Só avança pro Passo 0.3 quando o Usuário valida o mapa.**
+
+**PERSISTÊNCIA OBRIGATÓRIA**: gravar o mapa COMPLETO em `PIPELINE.MAPA_SISTEMA` (TEXT; criar coluna via `ALTER TABLE PIPELINE ADD COLUMN MAPA_SISTEMA TEXT` se não existir) via `runDmlMitra` UPDATE. Vira aba na UI da AF. Stripar emojis 4-byte antes.
+
+#### Passo 0.3 — Coordenador escreve HISTÓRIA DE USUÁRIO DIA 1 (obrigatório antes do Passo 0.5)
+
+A história Dia 1 **DEVE COBRIR** cada rota do `mapa_sistema_<sistema>.md` (Passo 0). Se o sistema tem KbPage e a história não narra nenhum fluxo que abre a KB, a história está INCOMPLETA. (Flávio msg 3318: "sua história tem que conter tudo que o sistema tem".)
+
+A história descreve a jornada do usuário **clique por clique pela UI** (não apenas conceitos). Responde às 4 perguntas:
 
 1. **Como é a melhor maneira de ingerir os dados?** — narrativa UI: qual tela o usuário abre primeiro, qual botão ele clica, qual modal aparece, qual dropdown escolhe, qual arquivo sobe, qual tela de confirmação vê, qual feedback recebe. Passo-a-passo concreto da ingestão, não conceitual.
 2. **Se puxar de um sistema fonte, o que é puxado e o que o sistema consegue extrair automaticamente pra NÃO ter que fazer manual?** — narrativa UI da inferência: qual botão/tela aciona a extração automática, quais campos o usuário revisa, quais pode ajustar, como o sistema confirma.
 3. **Como os dados vão ser mantidos depois?** (fluxo de manutenção recorrente) — narrativa UI: qual a sequência de cliques no fluxo mensal, qual tela/wizard/kanban, qual botão finaliza.
 4. **Qual é a história feliz de CADA usuário até cumprir seu primeiro objetivo?** (persona por persona) — narrativa UI completa: que tela cada persona abre, que ação faz, que tela chega no final. Do login ao valor entregue, sem pular interações.
+
+**Seção obrigatória no final da história — INVENTÁRIO DE COBERTURA:** tabela com colunas `Rota | Page | Persona | Passo da história que cobre`. TODA rota do mapa tem que estar na tabela. Rotas não cobertas por nenhum passo narrado = buraco — ou a história precisa incluir, ou a rota é legado que vai ser removido (decidir junto com Flávio, NUNCA sozinho).
 
 **Regra**: se a história pode ser implementada sem o usuário abrir o navegador, está incompleta. Cada passo narrado deve poder ser reproduzido por um QA seguindo o texto como roteiro de Playwright.
 
@@ -1128,15 +1164,18 @@ Juntos (Coordenador + Usuário) avaliam:
 **SÓ avança pro Passo 4 quando o Usuário aprovar a lista (revisada se necessário).** Se reprovar, volta pro Passo 2 com ajustes.
 
 #### Passo 4 — Re-Pesquisador modo TESTING (Round 1): avalia NOSSO sistema vs lista aprovada
-Spawnar Re-Pesquisador novamente com `reround_researcher.md` INTEIRO + `qa.md` INTEIRO + lista aprovada + história Dia 1. Agora sim ele:
+Spawnar Re-Pesquisador com `reround_researcher.md` INTEIRO + `qa.md` INTEIRO + lista aprovada + história Dia 1 + **`mapa_sistema_<sistema>.md` (Passo 0)**. Agora sim ele:
+- **COBERTURA TOTAL OBRIGATÓRIA**: testa CADA rota listada no mapa_sistema, NÃO só as features do SCOPING. Se o mapa tem 25 rotas, o relatório tem 25 entradas. Rotas não cobertas = relatório REJEITADO (incidente 2026-04-17).
 - Testa CADA feature no nosso sistema via Playwright (CRIAR do zero, EXECUTAR, VERIFICAR no banco)
 - Para CADA feature: nota 0-10 vs incumbente com EVIDÊNCIA de execução
+- Status por rota: `10 funciona igual incumbente` / `nota-N com gap específico` / `NT nao-testado (justificar por que)` — nunca `NE nao-existe` sem confirmar grep no repo.
 - Coluna `STATUS_VS_ROUND_ANTERIOR` (Novo / Melhorou / Igual / Piorou) — vazia neste round inicial
 - Coluna Gap com ESPECIFICAÇÃO TÉCNICA pro Dev (não frase vaga)
-- Calcula % Production-Ready
+- Calcula % Production-Ready **sobre TODAS as rotas do mapa** (não sobre subset)
 - Verifica os 27 checks visuais do `qa.md` (NÃO duplicar regras — usar o `qa.md` direto, é a fonte única)
 
-**REGRA: Qualquer nota sem evidência de execução = relatório REJEITADO.**
+**REGRA 1: Qualquer nota sem evidência de execução = relatório REJEITADO.**
+**REGRA 2: Relatório com menos rotas que o mapa_sistema = relatório REJEITADO.** Coordenador confere `count(rotas_relatorio) == count(rotas_mapa)` antes de aceitar.
 
 Coordenador grava 1 linha em HISTORICO_REROUND com FASE='TESTING', ROUND_NUMERO=1, NOTA_PARIDADE/IMPLANTACAO/OPERACAO/ROBUSTEZ/MEDIA, GAPS_*, PERCENT_PRODUCTION_READY.
 
