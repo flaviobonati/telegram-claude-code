@@ -1051,238 +1051,105 @@ Esta seção registra **como o processo evoluiu** e **por que cada componente ex
 - **Silent death dos subprocesses**: claude CLI com output grande pode truncar stdout a 1 byte. Workaround: Dev/QA escrevem relatório via Write tool (guaranteed flush) antes de imprimir stdout.
 - **PROIBIDO PDF pra demonstração de dados — use HTML interativo** (validado por Flávio em 2026-04-16): para board packs, dashboards, DRE/BP/DFC, relatórios gerenciais, ou qualquer artefato cuja função é APRESENTAR DADOS, NUNCA usar PDF (Puppeteer, jsPDF, html2pdf, etc.). Em vez disso, criar **rota HTML interativa dentro do sistema** (ex: `/board-pack/Q1-2026`) com tabelas, gráficos, drill-down, dark/light. Compartilhamento via URL autenticada ou Ctrl+P do browser (CSS @media print). HTML é mais bonito, respeita dark mode, permite interação, e o usuário ainda exporta via Imprimir → Salvar PDF do browser quando precisa. Único caso permitido pra PDF: documento legal/fiscal de formato fixo (NF-e, contrato assinado, recibo, boleto). Razão da regra: Puppeteer é caro/frágil/lento e o resultado fica pior que HTML simples — perdemos rounds tentando PDF antes. Detalhe na §12.16.1 do dev.md.
 
-### 19.6 Re-Round (Processo de Production-Grade) — PASSOS OBRIGATÓRIOS
+### 19.6 Re-Round — Fluxo
 
-O Re-Round é o **retoque final** da fábrica. Transforma sistema 10/10/10/10 (demo-grade) em production-grade. É processo padrão, não one-off.
+Gol: fazer o sistema atual rodar. Feature nova do incumbente só entra quando melhora implantabilidade ou funcionalidade existente sem expandir o sistema, com o Usuário aprovando uma a uma.
 
-**Princípio**: "Não expandir o produto — garantir que o core funciona 100% e está pronto pra implantação oficial." (Flávio, 2026-04-12)
+Duas fases (§5):
+- `preparacao_reround` — Passos 0-3 (Coordenador).
+- `execucao_reround` — Passos 4-6, loop Dev ⇄ QA Implantador.
 
-**O Re-Round acontece em DUAS fases da máquina de estado** (§5):
-- **`preparacao_reround`** — Coordenador faz Passos 0-4 (mapeia sistema atual, escreve história Dia 1 cobrindo TODAS as rotas do mapa, pesquisa jornada real do incumbente, spawna Re-Pesquisador modo SCOPING, valida lista com Usuário). Não há ciclo Dev⇄QA aqui.
-- **`execucao_reround`** — loop Dev ⇄ Re-Pesquisador modo TESTING (Passo 5) até convergir, depois QA Implantador (Passo 6).
+Sem sub-agent Re-Pesquisador. Coordenador pesquisa e avalia diretamente.
 
-**Os passos do Re-Round (OBRIGATÓRIOS, nesta ordem):**
+#### Passo 0 — MAPEAR SISTEMA ATUAL
 
-#### Passo 0 — MAPEAMENTO DO SISTEMA ATUAL (OBRIGATÓRIO antes de QUALQUER outro passo do Re-Round)
+Produzir `/opt/mitra-factory/output/mapa_sistema_<sistema>.md` com rotas (App.tsx), pages, SFs, tabelas. Cada item com 1 linha do que faz. Estado: `funciona` / `bugado` / `vazio` / `nao-testado` — `funciona` só com Playwright+DB check.
 
-**Incidente 2026-04-17 (msgs 3315-3319 do Flávio):** Coordenador spawnou 3 rounds de Re-Pesq no HD e CO achando que o sistema só tinha as 18 features listadas no Round 2 baseline. Propôs construir Portal público + CSAT + KB + Gatilhos + Macros + SLAs como features "ausentes". TODAS JÁ EXISTIAM no repo. Re-Pesq nunca tinha testado. Notas 7.17 HD e 7.15 CO eram do subset de 18 features, NÃO do sistema inteiro — **notas FALSAS**. Flávio parou a fábrica.
+Vocabulário: `ausente_verificado` (grep 0); `ausente_suposto` (proibido sem verificar); `nao-testado` (existe mas nunca rodou).
 
-**Raiz do problema:** Coordenador tratou output do Re-Pesq como "fotografia do sistema" quando era "fotografia do subset testado". Nunca auditou o repo em Round 0.
+Persistir em `PIPELINE.MAPA_SISTEMA` (TEXT, criar coluna se não existir) via `runDmlMitra` (stripar 4-byte). Usuário valida antes de avançar.
 
-**Regra Flávio 2026-04-17 (msg 3318):** *"Não existe história de usuário sem você antes conhecer o que você já tem. Antes de escrever a primeira história você tem que, de fato, mapear o sistema inteiro. Depois sua história tem que conter tudo que o sistema tem. Depois o teste vai ser feito em cima da história completa e a nota vai ser mais justa."*
+#### Passo 1 — TRÊS HISTÓRIAS (em paralelo)
 
-**O que o Passo 0 exige:** produzir `/opt/mitra-factory/output/mapa_sistema_<sistema>.md` com:
+a. **historia_sistema_atual** — Coordenador escreve a partir do mapa, clique a clique do que o código já executa, persona por persona. Não inventa; narra. → `PIPELINE.HISTORIA_SISTEMA_ATUAL`.
 
-1. **TODAS as rotas do `App.tsx`** — cada `<Route path="…" element={…} />` com nome do componente e persona que acessa.
-2. **TODAS as pages em `/frontend/src/pages/`** — glob recursivo, cada `*Page.tsx` com 1 linha do que faz.
-3. **TODAS as SFs do backend** (`/backend/functions/`) — nome + 1 linha do que faz (lendo o código, não inventando).
-4. **TODAS as tabelas** (`runQueryMitra SHOW TABLES` + DESC nas de domínio) — nome + colunas principais + cardinalidade.
-5. **Estado de cada rota/page**: `funciona` / `bugado` / `vazio` / `nao-testado`. Só marcar `funciona` com Playwright + DB check. Sem teste = `nao-testado`.
+b. **historia_incumbente** — Coordenador pesquisa. Regras: URL da doc oficial por afirmação (`help.<x>.com` / `support.<x>.com` / `docs.<x>.com`); mínimo 15-20 WebFetches; `⚠️ FONTE NÃO ENCONTRADA` onde faltar; 2-3 players concorrentes pra lacunas (apresentar 3 opções ao Usuário no Passo 2: (a) igual incumbente, (b) player X com URL, (c) sugestão Mitra). → `PIPELINE.HISTORIA_INCUMBENTE`.
 
-**Como executar (30-60 min por sistema):**
-- `pullFromS3Mitra` do bundle atual pra ter código na workspace.
-- Glob `/pages/**/*Page.tsx` + Read `App.tsx`.
-- Grep `/backend/functions/` pra nomes das SFs.
-- `runQueryMitra SHOW TABLES` + DESC nas tabelas de domínio.
-- Playwright spot-check nas rotas mais obscuras (teste profundo é Passo 4).
+c. **historia_intencionada** — Coordenador pergunta ao Usuário: "Você tem uma história base em mente pro [sistema]? Quem é o usuário principal, primeiro objetivo Dia 1, atalhos esperados?". Resposta vazia → arquivo marcado `[sem história intencionada]`.
 
-**Vocabulário obrigatório — NUNCA confundir:**
-- `ausente_verificado` = grep deu 0 no repo. Posso propor construir.
-- `ausente_suposto` = NÃO verifiquei. PROIBIDO dizer "ausente" — tenho que verificar primeiro.
-- `nao-testado` = existe no repo mas Re-Pesq nunca rodou. Passa pro Passo 4 cobrir.
+#### Passo 2 — CRUZAMENTO 3-VIAS + HISTÓRIA DIA 1
 
-**Output**: `mapa_sistema_<sistema>.md` enviado pro Usuário via Telegram. **Só avança pro Passo 0.3 quando o Usuário valida o mapa.**
+Coordenador cruza sempre as três (intencionada vazia conta como contribuição nula). Produz proposta:
+- Base: historia_sistema_atual — implantar o que existe.
+- historia_intencionada tem prioridade sobre incumbente em divergências.
+- **Adições do incumbente: Coordenador escolhe ativamente e recomenda ao Usuário os pontos que julga valer a pena incorporar** — N livre, só as que melhoram implantabilidade OU função existente sem expandir escopo. Coordenador opina (não apenas lista).
 
-**PERSISTÊNCIA OBRIGATÓRIA**: gravar o mapa COMPLETO em `PIPELINE.MAPA_SISTEMA` (TEXT; criar coluna via `ALTER TABLE PIPELINE ADD COLUMN MAPA_SISTEMA TEXT` se não existir) via `runDmlMitra` UPDATE. Vira aba na UI da AF. Stripar emojis 4-byte antes.
+Envia pro Usuário via Telegram a recomendação — cada item com (origem / justificativa objetiva / impacto leve-médio / por que o Coordenador sugere). Usuário aprova uma a uma (pode rejeitar, aceitar, ou pedir ajuste).
 
-#### Passo 0.3 — Coordenador escreve HISTÓRIA DE USUÁRIO DIA 1 (obrigatório antes do Passo 0.5)
+Após aprovação, Coordenador consolida `/opt/mitra-factory/output/historia_implantacao_<sistema>.md`: narrativa clique-a-clique, 4 perguntas respondidas — (1) melhor maneira de ingerir dados, (2) o que é puxado / extraído automático, (3) como mantém depois, (4) história feliz por persona até primeiro objetivo — e inventário de cobertura rota↔passo (toda rota do mapa tem que estar na tabela). → `PIPELINE.HISTORIA_IMPLANTACAO` via `runDmlMitra` (stripar 4-byte).
 
-A história Dia 1 **DEVE COBRIR** cada rota do `mapa_sistema_<sistema>.md` (Passo 0). Se o sistema tem KbPage e a história não narra nenhum fluxo que abre a KB, a história está INCOMPLETA. (Flávio msg 3318: "sua história tem que conter tudo que o sistema tem".)
+#### Passo 3 — TABELA DE FEATURES + APROVAÇÃO
 
-A história descreve a jornada do usuário **clique por clique pela UI** (não apenas conceitos). Responde às 4 perguntas:
+Coordenador produz `/opt/mitra-factory/output/lista_features_<sistema>.md`:
 
-1. **Como é a melhor maneira de ingerir os dados?** — narrativa UI: qual tela o usuário abre primeiro, qual botão ele clica, qual modal aparece, qual dropdown escolhe, qual arquivo sobe, qual tela de confirmação vê, qual feedback recebe. Passo-a-passo concreto da ingestão, não conceitual.
-2. **Se puxar de um sistema fonte, o que é puxado e o que o sistema consegue extrair automaticamente pra NÃO ter que fazer manual?** — narrativa UI da inferência: qual botão/tela aciona a extração automática, quais campos o usuário revisa, quais pode ajustar, como o sistema confirma.
-3. **Como os dados vão ser mantidos depois?** (fluxo de manutenção recorrente) — narrativa UI: qual a sequência de cliques no fluxo mensal, qual tela/wizard/kanban, qual botão finaliza.
-4. **Qual é a história feliz de CADA usuário até cumprir seu primeiro objetivo?** (persona por persona) — narrativa UI completa: que tela cada persona abre, que ação faz, que tela chega no final. Do login ao valor entregue, sem pular interações.
+| # | Feature | Parágrafo da história (âncora) | Nota incumbente 0-10 | Nossa nota 0-10 | Gap (spec técnica) |
 
-**Seção obrigatória no final da história — INVENTÁRIO DE COBERTURA:** tabela com colunas `Rota | Page | Persona | Passo da história que cobre`. TODA rota do mapa tem que estar na tabela. Rotas não cobertas por nenhum passo narrado = buraco — ou a história precisa incluir, ou a rota é legado que vai ser removido (decidir junto com Flávio, NUNCA sozinho).
+Regras:
+- Cada feature ancorada a 1+ parágrafos da história. Sem âncora, não entra.
+- Notas com evidência: Playwright+SQL pro nosso; URL/doc pro incumbente.
+- Gap como spec técnica ("adicionar botão X na rota Y disparando SF Z"), nunca frase vaga.
+- Antes de enviar: count(features) == count(parágrafos-com-âncora); nenhum parágrafo sem feature. Se falha, refaz.
 
-**Regra**: se a história pode ser implementada sem o usuário abrir o navegador, está incompleta. Cada passo narrado deve poder ser reproduzido por um QA seguindo o texto como roteiro de Playwright.
+→ `PIPELINE.LISTA_FEATURES_REROUND` via `runDmlMitra`. Usuário aprova. Transição `preparacao_reround` → `execucao_reround`.
 
-**O Coordenador envia a história pro Usuário via Telegram e valida antes de ir pro Passo 0.5.** Sem validação da história = não inicia o Re-Round.
+#### Passo 4 — DEV
 
-**PERSISTÊNCIA OBRIGATÓRIA**: assim que a história é escrita (e antes de validar com o Usuário), o Coordenador grava o conteúdo COMPLETO do `historia_implantacao_{sistema}.md` na coluna `PIPELINE.HISTORIA_IMPLANTACAO` (TEXT) via `runDmlMitra` UPDATE. Motivo: vira aba na UI da AF pro Flávio consultar a qualquer momento. `patchRecordMitra` NÃO persiste TEXT grandes — usar SEMPRE `runDmlMitra`. Stripar emojis 4-byte (💡, 🟢, ▶, etc.) antes do UPDATE pra evitar erro de charset.
+Recebe a tabela aprovada + `questionamentos.md` obrigatório + `dev.md` inteiro + histórico de QAs anteriores.
 
-#### Passo 0.5 — Coordenador pesquisa a JORNADA REAL DE IMPLANTAÇÃO do incumbente (OBRIGATÓRIO antes do Passo 1)
+#### Passo 5 — QA IMPLANTADOR
 
-Antes de spawnar qualquer Re-Pesquisador, o Coordenador faz **15-30 min de WebSearch direto** sobre como o incumbente é implantado de verdade no cliente — não como ele é vendido no marketing. Foco em:
+Executa a história Dia 1 ponta a ponta, só pela UI via Playwright, simulando cliente. SDK só pra SELECT verificar persistência pós-ação. Create-from-scratch obrigatório (criar entidades novas pela UI; seed mascara bugs).
 
-- "[incumbente] onboarding tutorial" / "primeiros passos" / "implementation guide"
-- Vídeos de implantadores reais no YouTube/LinkedIn
-- Reviews G2/Capterra com reclamações de implantação ("levou X meses pra subir", "tive que importar tudo do ERP", "wizard era confuso")
-- Documentação de partners/consultorias que vendem serviço de implantar o incumbente
+Briefing: `qa.md` inteiro + este Passo 5 + historia_implantacao + último QA + tabela do Passo 3.
 
-**Por que esse passo existe**: o incidente do CO (2026-04) — Coordenador escreveu Dia 1 com cadastro manual de centros de custo. A realidade do incumbente é importar lançamentos contábeis do ERP e o sistema INFERIR centros/contas. Sem essa pesquisa, a história Dia 1 vira ficção e o Dev constrói wizard manual que ninguém usa.
+**Entrega obrigatória — `/opt/mitra-factory/output/qa_reround_<sistema>_r<N>.md`** contendo, nesta ordem:
 
-**Output**: 1 parágrafo no início da história Dia 1 — "Como o incumbente é implantado na vida real" — com 3-5 fatos concretos (formato dos dados de entrada, ferramenta de import, o que é manual e o que é inferido). Se a história Dia 1 contradiz esses fatos, REESCREVER a história antes do Passo 1.
+1. **Tabela feature-a-feature** (seção principal, nunca omissível; feature ausente = QA rejeitado):
 
-#### Passo 1 — Usuário pede Re-Round
-O Usuário diz "Re-Round do [sistema]". O Coordenador identifica o INCUMBENTE PRINCIPAL (campo na PIPELINE).
+   | # | Feature | Parágrafo da história | Nota 0-10 | Status 🟢/🟡/🔴 | Evidência (screenshot UI + query SQL) |
 
-#### Passo 2 — Re-Pesquisador modo SCOPING: lista features do INCUMBENTE (NÃO testa o nosso)
-Spawnar Re-Pesquisador com `reround_researcher.md` INTEIRO + `qa.md` INTEIRO + história Dia 1 (incluindo o parágrafo do Passo 0.5). Neste passo ele APENAS:
-- Pesquisa o incumbente (WebSearch, docs, vídeos, reviews) — **PROFUNDA**, ver regras §19.6.A abaixo
-- Lista TODAS as features COBERTAS PELA HISTÓRIA com granularidade correta (cada canal separado, cada CRUD separado, etc.)
-- Para CADA feature: descreve COMO funciona no incumbente (3-5 frases com cliques, telas, resultado) **+ URL da fonte**
-- A soma de TODAS as features MUST deve representar 100% da história Dia 1
-- Ele **NÃO testa nosso sistema** neste passo — só mapeia o incumbente
+   Uma linha por feature da tabela do Passo 3. Nota cai pra 0 automática se o wizard/tela não reflete o passo correspondente da história (vocabulário, ordem, cliques, resultados).
 
-Output: arquivo com lista de features + descrições do incumbente. Coordenador grava 1 linha em HISTORICO_REROUND com FASE='SCOPING'.
+2. **Seções padrão A-D** (veredito = pior nota):
+   - A) Visual (27 checks do qa.md)
+   - B) Funcional (fluxo da história pela UI)
+   - C) Performance (tempos vs história)
+   - D) Vocabulário/História (alinhamento tela↔história)
 
-##### §19.6.A — REGRAS DE PESQUISA PROFUNDA DO INCUMBENTE (validadas por Flávio em 2026-04-16)
+3. **Seções complementares obrigatórias:**
+   - E) Narrativa 1ª pessoa da implantação (telas abertas, botões clicados, erros, recuperação)
+   - F) O que deu certo (wins: features sólidas, UX, persistência, performance)
+   - G) Gaps abertos com spec técnica pro próximo Passo 4
 
-Antes de spawnar o Re-Pesquisador (modo SCOPING) ou de produzir HISTORIA_IMPLANTACAO no Passo 0, o Coordenador deve gerar (ou exigir) um arquivo `/opt/mitra-factory/output/pesquisa_<incumbente>_deep.md` com PESQUISA PROFUNDA. Regras:
+Qualquer P0 em A-D = 🔴 (design porco é bloqueador, não cosmético).
 
-1. **FONTE POR AFIRMAÇÃO**: cada fato sobre o incumbente DEVE ter URL da docs oficial (`help.<x>.com`, `support.<x>.com`, `docs.<x>.com`) colada ao lado. Sem URL = fato inválido.
-2. **PROIBIDO INVENTAR**: onde NÃO encontrar fonte, escrever EXPLICITAMENTE `⚠️ FONTE NAO ENCONTRADA — perguntar ao Flávio`. Lista vai pro Flávio decidir junto.
-3. **PROFUNDIDADE MÍNIMA**: 15-20 WebFetches por sistema incumbente. Pesquisa rasa (3-5 fetches) = rejeitada.
-4. **OUTROS PLAYERS PARA LACUNAS**: quando o incumbente não tem feature que o cliente precisa, pesquisar 2-3 players concorrentes (ex: Adaptive Insights/Anaplan/Vena pra Accountfy; Freshdesk/Intercom/Jira pra Zendesk) com URL e propor sugestão baseada em FATO deles.
-5. **APRESENTAR LACUNAS PRO FLÁVIO EM 3-OPÇÕES**:
-   - (a) IGUAL INCUMBENTE (não fazer)
-   - (b) SUGESTÃO PLAYER X (com URL)
-   - (c) SUGESTÃO MITRA INVENTADA
-   Flávio decide qual das 3. Coordenador NUNCA escolhe sozinho.
+Coordenador grava linha em HISTORICO_REROUND (FASE='QA', ROUND_NUMERO=N, notas A-D, nota agregada feature-a-feature, PERCENT_PRODUCTION_READY).
 
-Detalhe completo: `coordenador/sub-agents/reround/reround_researcher.md` §3 Fase 1 (subseções "FONTE POR AFIRMACAO" e "OUTROS PLAYERS"). Razão histórica: pesquisas rasas levaram a histórias com features inventadas; Flávio explicitou em msg 3194/3198 que isso quebra confiança.
+#### Passo 6 — LOOP
 
-**PERSISTÊNCIA OBRIGATÓRIA**: o Coordenador grava o conteúdo COMPLETO da lista de features (com descrições do incumbente) na coluna `PIPELINE.LISTA_FEATURES_REROUND` (TEXT) via `runDmlMitra` UPDATE. Motivo: vira aba na UI da AF pro Flávio consultar a qualquer momento. Mesmas regras do Passo 0 (TEXT grande → `runDmlMitra`, stripar emojis 4-byte).
+QA 🟢 em A-D E toda feature MUST ≥10 → `execucao_reround` → `producao`. Qualquer feature MUST <10 ou seção 🔴 → volta pro Passo 4 com gaps específicos.
 
-#### Passo 3 — Coordenador AVALIA a lista em 3 buckets + envia pro Usuário (NUNCA cru)
+Detector de loop morto: se 3 rounds consecutivos com `delta_% < 30` (PERCENT_PRODUCTION_READY(N) − PERCENT_PRODUCTION_READY(N-1)) ou nenhum P0 fechado, pausar:
+1. `pullFromS3Mitra` do código atual.
+2. Ler source TypeScript real.
+3. Identificar causa raiz (briefing vago? feature mal especificada? Dev interpretando cosmético?).
+4. Refatorar briefing do Dev (spec técnica detalhada).
+5. Avisar Usuário via Telegram com diagnóstico antes de retomar.
 
-O Coordenador NUNCA despacha a lista do SCOPING crua pro Usuário. Antes de enviar, avalia CADA feature e classifica em 3 buckets:
-
-- **✅ O que tá CORRETO** — features alinhadas com a história Dia 1 e com a realidade do incumbente; cliente real vai precisar
-- **🤏 O que tá SIMPLISTA** — features listadas mas com descrição rasa, falta granularidade ou profundidade; precisa o Re-Pesquisador detalhar mais
-- **⚠️ O que tá OVERKILL** — features que extrapolam a história Dia 1 ou são vaidade vs. necessidade real do cliente
-
-Cada bucket com 3-7 bullets. Mensagem Telegram com 3 seções claras + recomendação final do Coordenador (entra como está / volta pro Passo 2 com ajustes específicos).
-
-**Por quê este passo existe**: sem avaliação do Coordenador, o Flávio recebe lista crua e tem que avaliar sozinho — perde-se o valor de ter o Coordenador no meio. (Validado por Flávio em 2026-04-16.)
-
-Juntos (Coordenador + Usuário) avaliam:
-- A lista cobre TUDO da história Dia 1?
-- As descrições são precisas?
-- Falta alguma feature que o cliente real vai precisar?
-- Alguma feature está granularizada demais ou de menos?
-
-**SÓ avança pro Passo 4 quando o Usuário aprovar a lista (revisada se necessário).** Se reprovar, volta pro Passo 2 com ajustes.
-
-#### Passo 4 — Re-Pesquisador modo TESTING (Round 1): avalia NOSSO sistema vs lista aprovada
-Spawnar Re-Pesquisador com `reround_researcher.md` INTEIRO + `qa.md` INTEIRO + lista aprovada + história Dia 1 + **`mapa_sistema_<sistema>.md` (Passo 0)**. Agora sim ele:
-- **COBERTURA TOTAL OBRIGATÓRIA**: testa CADA rota listada no mapa_sistema, NÃO só as features do SCOPING. Se o mapa tem 25 rotas, o relatório tem 25 entradas. Rotas não cobertas = relatório REJEITADO (incidente 2026-04-17).
-- Testa CADA feature no nosso sistema via Playwright (CRIAR do zero, EXECUTAR, VERIFICAR no banco)
-- Para CADA feature: nota 0-10 vs incumbente com EVIDÊNCIA de execução
-- Status por rota: `10 funciona igual incumbente` / `nota-N com gap específico` / `NT nao-testado (justificar por que)` — nunca `NE nao-existe` sem confirmar grep no repo.
-- Coluna `STATUS_VS_ROUND_ANTERIOR` (Novo / Melhorou / Igual / Piorou) — vazia neste round inicial
-- Coluna Gap com ESPECIFICAÇÃO TÉCNICA pro Dev (não frase vaga)
-- Calcula % Production-Ready **sobre TODAS as rotas do mapa** (não sobre subset)
-- Verifica os 27 checks visuais do `qa.md` (NÃO duplicar regras — usar o `qa.md` direto, é a fonte única)
-
-**REGRA 1: Qualquer nota sem evidência de execução = relatório REJEITADO.**
-**REGRA 2: Relatório com menos rotas que o mapa_sistema = relatório REJEITADO.** Coordenador confere `count(rotas_relatorio) == count(rotas_mapa)` antes de aceitar.
-
-Coordenador grava 1 linha em HISTORICO_REROUND com FASE='TESTING', ROUND_NUMERO=1, NOTA_PARIDADE/IMPLANTACAO/OPERACAO/ROBUSTEZ/MEDIA, GAPS_*, PERCENT_PRODUCTION_READY.
-
-#### Passo 4.5 — Coordenador AVALIA CRITICAMENTE o retorno do Re-Round (OBRIGATÓRIO antes do Dev)
-
-Quando o Re-Pesquisador devolve o gap analysis, o Coordenador **NÃO manda direto pro Dev**. Ele primeiro responde à pergunta-chave:
-
-> **"Essa lista de features está conectada com o objetivo do sistema, trazendo tudo que o sistema tem que trazer para cumprir um bom funcionamento para o usuário final e sem exageros?"**
-
-**Checklist mecânico (TODOS os 6 itens — sem subjetividade):**
-
-1. **Reflexo nativo Mitra**: pra cada gap que sugere tech externa (Puppeteer, n8n, integração X), confirmar que `system_prompt.md` do Mitra não resolve nativo (sendEmailMitra, login nativo, audit log, uploadFilePublic, polling). Se resolve nativo → reescrever o gap pra usar Mitra.
-2. **Worker IA vs código determinístico**: gaps classificados como "worker IA" só passam se forem genuinamente LLM autônomo. Tudo que é cron, integração API, cálculo, rendering = código determinístico → Dev faz.
-3. **Alinhamento Dia 1 + Passo 0.5**: cada feature MUST do gap analysis tem que mapear pra um clique narrado na história Dia 1 OU pra um fato da pesquisa do Passo 0.5. Se não mapeia → é feature inventada → REMOVER.
-4. **Empty states / mensagens de erro / busca / filtros / loading**: o Re-Round prioriza features de paridade. Adicionar manualmente esses 5 itens UX se ausentes — empty state em cada lista, mensagem de erro humana, busca/filtro nas listas com >20 itens, loading state em ações >300ms.
-5. **Wizard UI vs história (Playwright check OBRIGATÓRIO pelo Coordenador — NUNCA delegar pro Re-Pesquisador):** abrir a URL do sistema via Playwright (mcp playwright ou npx), fazer login como persona PRINCIPAL da história Dia 1 (Carla pra CO, Lara pra HD, etc.), navegar a rota da história, comparar SCREEN POR SCREEN contra os cliques narrados na v3. Conferir 3 dimensões SEPARADAS, não só "tem a tela?":
-   - **(a) Vocabulário/labels**: nome de etapa/card/botão tem que bater LETRA POR LETRA. Ex: "Inferir Estruturas" ≠ "Configurar Estrutura Gerencial" — divergência de label = wizard desalinhado, mesmo se funciona.
-   - **(b) Ordem/sequência**: cards bloqueados em cascata na ordem da história. Stepper vertical vs lateral vs linear: se a história desenha vertical 5 cards, sistema com 5 passos lineares = desalinhado.
-   - **(c) Pontos de entrada (modais/wizards)**: se a história desenha modal de boas-vindas na entrada (ex: 5 cards setoriais no CO), sistema sem esse modal = desalinhado.
-
-   **PROIBIDO confiar na nota do Re-Pesquisador** ("wizard cobre Pergunta X" não é fidelidade ao design). Se Coordenador não fez Playwright check próprio = Passo 4.5 INVÁLIDO, refazer. Se desalinhado em qualquer das 3 dimensões → vira **item nº 1 do TIER 1 do brief Round 2** (não polish — PRIORIDADE máxima, REESCREVER fluxo do zero pra bater com a história).
-
-   **Formato OBRIGATÓRIO da mensagem pro Usuário no Passo 4.5** deve incluir: `[ ] Playwright check Coordenador: persona X / N telas comparadas / item 5 = [verde/amarelo/vermelho]`. Sem essa linha = mensagem inválida, não enviar.
-
-6. **Trigger de regenerar Dia 1**: se o Coordenador cortar mais de 20% das features no item 3, ou se descobrir nesse passo que a história Dia 1 não bate com a realidade do incumbente (NÃO o caso de o sistema desviar da história — esse caso é item 5), REESCREVER a história Dia 1 e voltar pro Passo 0 (não maquilar — refazer).
-
-O Coordenador envia pro Usuário via Telegram a lista REVISADA (o que entra, o que sai, e o por quê objetivo de cada decisão, com referência aos itens 1-6 acima). **SÓ avança pro Passo 5 (transição STATUS preparacao_reround → execucao_reround) quando o Usuário aprovar.**
-
-**Aprendizado 2026-04-16 (incidente CO Round 1)**: Re-Pesquisador reportou "wizard /implantacao 5-passos cobre Pergunta 1+2+3" com nota IMPLANTACAO=7.0. Coordenador aceitou sem Playwright próprio. Flávio testou e pegou: sistema tinha "Inferir Estruturas" (PROIBIDO pela história v3 que diz "sem inferência mágica"), faltava modal setorial 5 cards, faltava stepper vertical Home, faltavam cards separados Razão/Balancete/Orçamento. NOTA_IMPLANTACAO real era 3.0 (existe tela mas vazia de fidelidade). Por isso o item 5 virou OBRIGATÓRIO+EXPLÍCITO acima.
-
-#### Passo 5 — Loop Dev ⇄ Re-Pesquisador modo TESTING até convergir (fase `execucao_reround`)
-- Dev recebe task list REVISADA do Passo 4.5 (não o gap cru do Passo 4) + `questionamentos.md` obrigatório + `dev.md` INTEIRO
-- Re-Pesquisador reavalia (Round N) com `reround_researcher.md` INTEIRO + `qa.md` INTEIRO + lista revisada + relatório do Round N-1
-- Cada round grava 1 linha em HISTORICO_REROUND com FASE='TESTING', ROUND_NUMERO=N, e a coluna STATUS_VS_ROUND_ANTERIOR de cada feature comparada ao Round N-1
-
-**Detector de loop morto (OBRIGATÓRIO — evita o incidente dos 10 rounds de 2026-04-15):**
-Após cada Round N≥2, calcular `delta = PERCENT_PRODUCTION_READY(N) - PERCENT_PRODUCTION_READY(N-1)`. Se 3 rounds consecutivos com delta < 30 pontos percentuais (ou nenhum gap CRITICO fechado), PAUSAR o loop:
-1. `pullFromS3Mitra` do código atual
-2. Ler o source TypeScript real do sistema
-3. Identificar a causa raiz (briefing vago? Feature mal especificada? Dev interpretando o gap como cosmético?)
-4. Refatorar o briefing pro Dev (especificação técnica detalhada do gap, não frase vaga)
-5. Avisar o Usuário via Telegram com diagnóstico antes de retomar
-
-**Regra de aprovação**: qualquer feature MUST com nota < 10 = volta pro Dev. O Re-Round só aprova quando TODAS as features MUST estão em paridade com o incumbente (considerando o corte de overkill validado no Passo 4.5). Nenhum item PARCIAL pode virar 🟢 — ou está 100% ou volta pro Dev.
-
-#### Passo 6 — QA IMPLANTADOR (obrigatório, último, antes de entregar pro Usuário)
-
-O QA IMPLANTADOR executa a história DIA 1 passo a passo, **EXCLUSIVAMENTE pela UI via Playwright**, simulando o cliente real.
-
-**Inputs obrigatórios do briefing (sem os 5, briefing é rejeitado):**
-1. `qa.md` INTEIRO (27 checagens visuais: fontes, cores, padrões, sombras, emojis, CamelCase, consistência, terminologia pt-BR, etc.)
-2. `reround_researcher.md` INTEIRO (concatenado em todo briefing de qualquer agente Re-Round, em qualquer modo — SCOPING, TESTING, IMPLANTADOR. Re-Round = QA + Re-Round combinados; o Dev no loop pode quebrar UX/UI achando que está só fechando gap funcional, e o briefing concat garante que o validador cobra ambos)
-3. `coordinator.md` §19.6 Passo 6 (regras abaixo)
-4. `historia_implantacao_{sistema}.md` (fonte da verdade — vocabulário, ordem, objetivos)
-5. Último QA anterior + último HISTORICO_REROUND (se houver — pra não re-testar o que já passou e pra validar fixes)
-
-**Relatório do QA tem 4 seções padrão + 3 seções OBRIGATÓRIAS adicionais:**
-
-PADRÃO:
-- **A) Visual** (qa.md — design, fontes, cores, padrões)
-- **B) Funcional** (Passo 6 UI — wizard, cliques, persistência)
-- **C) Performance** (tempos de resposta vs o que a história narra)
-- **D) Vocabulário/História** (alinhamento tela↔história)
-
-ADICIONAIS (validadas por Flávio em 2026-04-16 — sem essas, relatório é REJEITADO):
-- **E) FEATURE-A-FEATURE com nota 0-10** — tabela com TODA feature MUST e nota production-ready individual (não só média). Cada linha: Feature | Nota 0-10 | Evidência (screenshot UI + query SQL) | Status (🟢/🟡/🔴)
-- **F) NARRATIVA passo-a-passo da implantação** — Implantador descreve em 1ª pessoa o que ele FEZ click-a-click pela UI, do login até cumprir cada objetivo da história Dia 1. Não é log seco — é a jornada vivida (qual tela ele abriu, qual botão clicou, qual erro encontrou, como recuperou)
-- **G) O QUE DEU CERTO** — seção destacando wins do sistema: features sólidas, UX bem resolvida, persistência confiável, performance boa. Motivo: Flávio quer calibrar confiança no produto, não só ver bugs. Se só listar problemas, distorce a percepção do estado real
-
-**Veredito = pior nota das 4 seções padrão (A-D)**. Qualquer P0 em qualquer seção = 🔴 (design porco é bloqueador, não cosmético). Seções E-G são obrigatórias mas informativas (não derrubam veredito por si sós — a nota individual de feature em E vira gap pro próximo Round).
-
-**Regras invioláveis:**
-
-a. **Execução do fluxo é SÓ pela UI**. SDK é PROIBIDO pra disparar a ação. SDK APENAS pra SELECT verificar persistência APÓS a ação na UI. Quem dispara é o Playwright navegando a URL como cliente.
-
-b. **Para CADA seção da história** (clique por clique descrito no Passo 0): abrir a rota esperada no browser, confirmar que o wizard/tela apresenta o passo que a história narra (mesmo vocabulário, mesma ordem, mesmo objetivo), clicar os botões como cliente, VER o resultado visualmente, e SÓ DEPOIS verificar no banco via SDK se persistiu.
-
-c. **Se QUALQUER passo do wizard/tela NÃO refletir o passo correspondente da história → nota ZERO automática**. Volta pro Dev com briefing específico: "wizard está desalinhado com história — refaça". Nota ZERO mesmo se o backend funciona, porque cliente real interage com UI, não com SQL.
-
-d. **Relatório só pode sair 🟢 IMPLANTÁVEL 100% se**: a navegação completa pela UI como cliente bateu 1-a-1 com a história (vocabulário, ordem, cliques, resultados).
-
-e. **Sem create-from-scratch = rejeitado**. Implantador deve criar entidades NOVAS do zero pela UI e executar o fluxo com elas, não confiar em dados seed. Seed mascara bugs do fluxo real.
-
-**Entrega do Implantador**: relatório `/opt/mitra-factory/output/implantador_{sistema}_report.md` com tabela passo-a-passo da história, status (✅/⚠/❌), evidência screenshot da UI + query SQL de persistência, e veredicto final (🟢 / 🟡 / 🔴).
-
-**Regra final**: só depois do Implantador emitir 🟢 o Coordenador entrega o sistema pro Usuário testar. Se 🟡 ou 🔴, volta pra Passo 5.
-
-**Regra chave**: Cada sistema tem 1 INCUMBENTE PRINCIPAL (campo no PIPELINE) definido pelo Usuário. Sempre perguntar ao Usuário qual incumbente antes de rodar.
-
-**Incumbentes**: O incumbente de cada sistema está no campo `INCUMBENTE` da tabela `PIPELINE` no banco da fábrica. Sempre consultar o banco — não hardcodar aqui. Se o campo estiver vazio, perguntar ao Usuário antes de rodar o Re-Round.
+**Incumbente**: campo `INCUMBENTE` na tabela `PIPELINE` — sempre consultar o banco, nunca hardcodar. Se vazio, perguntar ao Usuário antes de iniciar o Re-Round.
 
 ---
+
 
 ## 20. Filosofia: Inteligência, Autonomia, Economia
 
