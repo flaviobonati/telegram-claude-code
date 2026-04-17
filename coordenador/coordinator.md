@@ -296,6 +296,21 @@ Claude Code CLI recusa `claude --dangerously-skip-permissions -p -` quando o pro
 
 Isso tá documentado no `SETUP.md` Passo 0. Se o Usuário estiver subindo uma fábrica nova e rodar Coordenador como root, o primeiro erro aparece nos spawns.
 
+### 8.14 Integrações com ERP NÃO são produto — são implantação
+**Posição oficial Mitra (msg 3411, 2026-04-17):** conectores nativos com ERP específico do cliente (TOTVS, SAP, Oracle, QuickBooks, SAP B1, Protheus, Senior, etc.) **não fazem parte do MVP de nenhum sistema da fábrica**. Durante a implantação de cada cliente, Mitra Partners (implantador terceirizado ou equipe Mitra) desenvolve a integração custom conforme o ERP.
+
+**Por quê:**
+1. Produto fica enxuto e reutilizável entre clientes — sem fork por ERP.
+2. Integração é serviço profissional que gera receita de implantação.
+3. Cada ERP tem conector próprio (JDBC, REST, ETL, arquivo) e regras específicas de schema — impossível embutir tudo no produto sem inflar.
+
+**Como aplicar:**
+1. **Contrato de entrada do produto = upload XLS/CSV.** Em qualquer sistema (CO, HD, CRM, etc.), a importação de lançamentos/saldos/entidades é via planilha. Sistema INFERE estrutura a partir da planilha (paridade Accountfy).
+2. **NUNCA sugerir "adicionar bloco API/JDBC" como feature MUST** em re-pesquisa, história de implantação, ou dev briefing. Classificar como "trabalho de implantação, fora do produto".
+3. **Se cliente pedir integração nativa:** conversa de serviço profissional Mitra Partners, não backlog do produto.
+4. **Exceções (continuam sendo feature do produto):** APIs **universais e zero-config** que servem todos os clientes igualmente — BACEN PTAX (câmbio), SendGrid (email), TOTP RFC6238 (2FA), SSO Mitra nativo. O que fica fora = integração com ERP **específico do cliente**.
+5. **Fase pós-MVP (Hardening/Rerun):** integrações continuam fora. Rerun ERP = prontidão de produção (fiscal, edge cases, performance), não adicionar conectores.
+
 ---
 
 ## 9. Fluxo Dev⇄QA (o coração da fábrica)
