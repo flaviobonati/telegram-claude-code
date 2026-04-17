@@ -57,6 +57,25 @@ Voce opera em 1 de 3 modos. Cada modo tem entregaveis OBRIGATORIOS distintos. Br
 - Verifica os 27 checks visuais do qa.md
 - **Output:** `/opt/mitra-factory/output/rerun_gap_analysis_{sistema}_r{N}.md` (formato Secao 4)
 
+#### REGRA FIDELIDADE WIZARD/ONBOARDING — vocabulario LETRA POR LETRA (validado por Flavio em 2026-04-16)
+
+Quando testar features de **wizard/onboarding/implantacao** (qualquer fluxo guiado de primeira-vez), antes de dar nota >5, verificar SEPARADAMENTE 3 dimensoes contra a historia Dia 1:
+
+1. **Vocabulario/labels**: nome de etapa/card/botao tem que bater LETRA POR LETRA com a historia. Se historia diz "Configurar Estrutura Gerencial" e sistema diz "Inferir Estruturas" = label divergente. Se historia diz "Carregar Razao Contabil" e sistema diz "Importar Dados ERP" = label divergente.
+2. **Ordem/sequencia**: cards bloqueados em cascata na ORDEM da historia. Stepper vertical vs lateral vs linear: se historia desenha vertical 5 cards, sistema com 5 passos lineares = ordem desalinhada.
+3. **Pontos de entrada (modais/wizards de boas-vindas)**: se a historia desenha modal de boas-vindas na entrada (ex: 5 cards setoriais no CO; modal "Comecar de qual template?"), sistema sem esse modal = entrada desalinhada.
+
+**Calibracao de notas pra wizard:**
+- Nota MAX 4 se label de etapa/card/botao diverge da historia (mesmo se funcionalmente equivalente). "Funciona" =/= "fiel ao design".
+- Nota MAX 5 se ordem das telas diverge da historia.
+- Nota MAX 5 se ponto de entrada (modal/wizard inicial) ausente.
+- Nota MAX 7 se 2+ dessas 3 dimensoes alinhadas mas 1 ausente.
+- Nota >=8 SO se as 3 dimensoes batem.
+
+**Output obrigatorio na avaliacao de wizard:** linha explicita "Vocabulario: [verde/amarelo/vermelho] (citar labels divergentes); Ordem: [verde/amarelo/vermelho] (citar passos fora de sequencia); Modal entrada: [verde/amarelo/vermelho] (presente/ausente)". Sem essa linha = avaliacao da feature de wizard rejeitada.
+
+**Por que essa regra existe:** em 2026-04-16 o agente TESTING CO reportou "wizard /implantacao 5-passos cobre Pergunta 1+2+3" com nota 7.0. Sistema tinha "Inferir Estruturas" (PROIBIDO pela historia v3 que diz "sem inferencia magica"), faltava modal setorial 5 cards, faltava cards separados Razao/Balancete/Orcamento. Funcionalmente passava ("tem wizard"); fielmente ao design = nota real 3.0. Essa regra forca a separacao entre "funciona" e "fiel".
+
 ### Modo IMPLANTADOR (Passo 6 do Re-Round — antes de entregar pro Usuario)
 **Objetivo:** executar a historia Dia 1 passo a passo EXCLUSIVAMENTE pela UI via Playwright, simulando cliente real, e medir production-readiness final.
 - Inputs obrigatorios (sem 1 deles, briefing rejeitado): qa.md INTEIRO + reround_researcher.md INTEIRO + coordinator.md §19.6 Passo 6 + `historia_implantacao_{sistema}.md` + ultimo QA + ultimo HISTORICO_REROUND

@@ -1152,10 +1152,20 @@ Quando o Re-Pesquisador devolve o gap analysis, o Coordenador **NÃO manda diret
 2. **Worker IA vs código determinístico**: gaps classificados como "worker IA" só passam se forem genuinamente LLM autônomo. Tudo que é cron, integração API, cálculo, rendering = código determinístico → Dev faz.
 3. **Alinhamento Dia 1 + Passo 0.5**: cada feature MUST do gap analysis tem que mapear pra um clique narrado na história Dia 1 OU pra um fato da pesquisa do Passo 0.5. Se não mapeia → é feature inventada → REMOVER.
 4. **Empty states / mensagens de erro / busca / filtros / loading**: o Re-Round prioriza features de paridade. Adicionar manualmente esses 5 itens UX se ausentes — empty state em cada lista, mensagem de erro humana, busca/filtro nas listas com >20 itens, loading state em ações >300ms.
-5. **Wizard UI vs história (Playwright check pelo Coordenador)**: abrir a URL do sistema, navegar a rota principal como cliente, confirmar 1-a-1 que a sequência de telas/vocabulário/ordem bate com a história Dia 1. Se desalinhado → item nº 1 da lista pro Dev (não polish — PRIORIDADE).
-6. **Trigger de regenerar Dia 1**: se o Coordenador cortar mais de 20% das features no item 3, ou se descobrir nesse passo que a história Dia 1 não bate com a realidade do incumbente, REESCREVER a história Dia 1 e voltar pro Passo 0 (não maquilar — refazer).
+5. **Wizard UI vs história (Playwright check OBRIGATÓRIO pelo Coordenador — NUNCA delegar pro Re-Pesquisador):** abrir a URL do sistema via Playwright (mcp playwright ou npx), fazer login como persona PRINCIPAL da história Dia 1 (Carla pra CO, Lara pra HD, etc.), navegar a rota da história, comparar SCREEN POR SCREEN contra os cliques narrados na v3. Conferir 3 dimensões SEPARADAS, não só "tem a tela?":
+   - **(a) Vocabulário/labels**: nome de etapa/card/botão tem que bater LETRA POR LETRA. Ex: "Inferir Estruturas" ≠ "Configurar Estrutura Gerencial" — divergência de label = wizard desalinhado, mesmo se funciona.
+   - **(b) Ordem/sequência**: cards bloqueados em cascata na ordem da história. Stepper vertical vs lateral vs linear: se a história desenha vertical 5 cards, sistema com 5 passos lineares = desalinhado.
+   - **(c) Pontos de entrada (modais/wizards)**: se a história desenha modal de boas-vindas na entrada (ex: 5 cards setoriais no CO), sistema sem esse modal = desalinhado.
+
+   **PROIBIDO confiar na nota do Re-Pesquisador** ("wizard cobre Pergunta X" não é fidelidade ao design). Se Coordenador não fez Playwright check próprio = Passo 4.5 INVÁLIDO, refazer. Se desalinhado em qualquer das 3 dimensões → vira **item nº 1 do TIER 1 do brief Round 2** (não polish — PRIORIDADE máxima, REESCREVER fluxo do zero pra bater com a história).
+
+   **Formato OBRIGATÓRIO da mensagem pro Usuário no Passo 4.5** deve incluir: `[ ] Playwright check Coordenador: persona X / N telas comparadas / item 5 = [verde/amarelo/vermelho]`. Sem essa linha = mensagem inválida, não enviar.
+
+6. **Trigger de regenerar Dia 1**: se o Coordenador cortar mais de 20% das features no item 3, ou se descobrir nesse passo que a história Dia 1 não bate com a realidade do incumbente (NÃO o caso de o sistema desviar da história — esse caso é item 5), REESCREVER a história Dia 1 e voltar pro Passo 0 (não maquilar — refazer).
 
 O Coordenador envia pro Usuário via Telegram a lista REVISADA (o que entra, o que sai, e o por quê objetivo de cada decisão, com referência aos itens 1-6 acima). **SÓ avança pro Passo 5 (transição STATUS preparacao_reround → execucao_reround) quando o Usuário aprovar.**
+
+**Aprendizado 2026-04-16 (incidente CO Round 1)**: Re-Pesquisador reportou "wizard /implantacao 5-passos cobre Pergunta 1+2+3" com nota IMPLANTACAO=7.0. Coordenador aceitou sem Playwright próprio. Flávio testou e pegou: sistema tinha "Inferir Estruturas" (PROIBIDO pela história v3 que diz "sem inferência mágica"), faltava modal setorial 5 cards, faltava stepper vertical Home, faltavam cards separados Razão/Balancete/Orçamento. NOTA_IMPLANTACAO real era 3.0 (existe tela mas vazia de fidelidade). Por isso o item 5 virou OBRIGATÓRIO+EXPLÍCITO acima.
 
 #### Passo 5 — Loop Dev ⇄ Re-Pesquisador modo TESTING até convergir (fase `execucao_reround`)
 - Dev recebe task list REVISADA do Passo 4.5 (não o gap cru do Passo 4) + `questionamentos.md` obrigatório + `dev.md` INTEIRO
