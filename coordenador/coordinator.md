@@ -1053,100 +1053,177 @@ Esta seção registra **como o processo evoluiu** e **por que cada componente ex
 
 ### 19.6 Re-Round — Fluxo
 
-Gol: fazer o sistema atual rodar. Feature nova do incumbente só entra quando melhora implantabilidade ou funcionalidade existente sem expandir o sistema, com o Usuário aprovando uma a uma.
+**Gol:** levar o sistema do estado atual até **production-grade implantável** — cliente novo roda o fluxo Dia 1 sem intervenção fora do desenho, e qualquer mês subsequente fecha sem travar. Feature do incumbente só entra se fecha gap de história testada, nunca como ornamento.
 
-Duas fases (§5):
-- `preparacao_reround` — Passos 0-3 (Coordenador).
-- `execucao_reround` — Passos 4-6, loop Dev ⇄ QA Implantador.
+**Três fases** (§5):
+- `preparacao_reround` — Passos 0–3 (Coordenador mapeia, escreve, testa, consolida backlog).
+- `execucao_reround` — Passo 4, loop Dev ⇄ QA com base na tabela combinada.
+- `producao` — Passo 5, QA Implantadora final; se aprovar, sistema vai pra produção.
 
-Sem sub-agent Re-Pesquisador. Coordenador pesquisa e avalia diretamente.
+#### Passo 0 — TASK LIST GLOBAL + MAPEAR SISTEMA ATUAL
 
-#### Passo 0 — MAPEAR SISTEMA ATUAL
+**Passo 0.1 (antes de qualquer coisa): criar a task list global do sistema.**
 
-Produzir `/opt/mitra-factory/output/mapa_sistema_<sistema>.md` com rotas (App.tsx), pages, SFs, tabelas. Cada item com 1 linha do que faz. Estado: `funciona` / `bugado` / `vazio` / `nao-testado` — `funciona` só com Playwright+DB check.
+Coordenador abre `/opt/mitra-factory/output/coordinator-tasks_<sistema>.md` ANTES de qualquer outra ação. Lista tem que cobrir integralmente **do estado atual até o sistema entrar em produção pronto pra cliente real**, não só o Round. Estrutura mínima por task: ID | Task (imperativo) | Fase (A/B/C) | Entregável | Dependências | Status.
 
-Vocabulário: `ausente_verificado` (grep 0); `ausente_suposto` (proibido sem verificar); `nao-testado` (existe mas nunca rodou).
+Tasks padrão que **sempre** entram (varia só o conteúdo):
 
-Persistir em `PIPELINE.MAPA_SISTEMA` (TEXT, criar coluna se não existir) via `runDmlMitra` (stripar 4-byte). Usuário valida antes de avançar.
+```
+FASE A — PREPARAÇÃO RE-ROUND
+A0  Criar task list global até produção — este arquivo.
+A1  Mapear sistema atual (rotas/SFs/tabelas/volumes) — persistir em PIPELINE.MAPA_SISTEMA.
+A2  Escrever historia_sistema_atual (Playwright + leitura source) — persistir em PIPELINE.HISTORIA_SISTEMA_ATUAL.
+A3  Escrever historia_incumbente (WebFetch, URL por afirmação, mín. 15-20 fontes) — persistir em PIPELINE.HISTORIA_INCUMBENTE.
+A4  Escrever historia_intencionada (Usuário narra) — persistir em PIPELINE.HISTORIA_INTENCIONADA.
+A5  Consolidar tabela_historias_combinadas (cruzamento das 3) + ALINHAR com Usuário suas sugestões de melhorias/novas histórias fundamentais pra V1 de produção.
+A6  Testar cada linha da tabela via Playwright (UI + persistência + fluxo de dados propagando + bugs P0/P1/P2 + screenshots + SDK checks).
+A7  Entregar tabela_historias_usuario_<sistema>.md preenchida pro Usuário via Telegram.
+A8  Usuário escolhe quais GAPS entram na V1 de produção. Bugs entram TODOS automaticamente. Consolidar gap_selection_<sistema>.md + persistir em PIPELINE.LISTA_FEATURES_REROUND.
 
-#### Passo 1 — TRÊS HISTÓRIAS (em paralelo)
+FASE B — EXECUÇÃO (LOOP DEV ⇄ QA)
+B1  Transição preparacao_reround → execucao_reround.
+B2  Dev sub-agent implementa gap_selection (bugs + gaps escolhidos — TUDO, sem priorização).
+B3  QA sub-agent valida o que o Dev entregou pela tabela combinada.
+B4  Loop Dev ⇄ QA até tudo entregue.
 
-a. **historia_sistema_atual** — Coordenador escreve a partir do mapa, clique a clique do que o código já executa, persona por persona. Não inventa; narra. → `PIPELINE.HISTORIA_SISTEMA_ATUAL`.
+FASE C — QA IMPLANTADORA FINAL + PRODUÇÃO
+C1  QA Implantadora re-executa a tabela INTEIRA como cliente real (implantação do zero + atualização).
+C2  Se aprovar 🟢 → transição execucao_reround → producao. Se não aprovar → volta pra Fase B com spec técnica dos resíduos.
 
-b. **historia_incumbente** — Coordenador pesquisa. Regras: URL da doc oficial por afirmação (`help.<x>.com` / `support.<x>.com` / `docs.<x>.com`); mínimo 15-20 WebFetches; `⚠️ FONTE NÃO ENCONTRADA` onde faltar; 2-3 players concorrentes pra lacunas (apresentar 3 opções ao Usuário no Passo 2: (a) igual incumbente, (b) player X com URL, (c) sugestão Mitra). → `PIPELINE.HISTORIA_INCUMBENTE`.
+TRANSVERSAIS (sempre vigentes, não numeradas)
+- Comunicação sempre via Telegram.
+- A cada nova tarefa executada: reler coordinator-tasks antes e confirmar que é o próximo passo. Bússola contra perder visão global.
+- Atualizar o arquivo a cada avanço (status → completed) e anotar sub-tasks quando surgem.
+- Persistir artefatos em PIPELINE a cada Passo.
+- Nunca podar MUST. Nunca resumir prompt dos sub-agents. pullFromS3 obrigatório antes de editar.
+```
 
-c. **historia_intencionada** — Coordenador pergunta ao Usuário: "Você tem uma história base em mente pro [sistema]? Quem é o usuário principal, primeiro objetivo Dia 1, atalhos esperados?". Resposta vazia → arquivo marcado `[sem história intencionada]`.
+Envia o link do arquivo pro Usuário via Telegram, pede confirmação de escopo, **só então** avança.
 
-#### Passo 2 — CRUZAMENTO 3-VIAS + HISTÓRIA DIA 1
+**Passo 0.2 — mapear sistema atual.**
 
-Coordenador cruza sempre as três (intencionada vazia conta como contribuição nula). Produz proposta:
-- Base: historia_sistema_atual — implantar o que existe.
-- historia_intencionada tem prioridade sobre incumbente em divergências.
-- **Adições do incumbente: Coordenador escolhe ativamente e recomenda ao Usuário os pontos que julga valer a pena incorporar** — N livre, só as que melhoram implantabilidade OU função existente sem expandir escopo. Coordenador opina (não apenas lista).
+Produzir `/opt/mitra-factory/output/mapa_sistema_<sistema>.md` com rotas (App.tsx), pages, SFs, tabelas. Cada item com 1 linha do que faz. Estado: `funciona` / `bugado` / `vazio` / `nao-testado` — `funciona` só com Playwright+DB check. Vocabulário: `ausente_verificado` (grep 0); `ausente_suposto` (proibido sem verificar); `nao-testado` (existe mas nunca rodou). Persistir em `PIPELINE.MAPA_SISTEMA` via `runDmlMitra` (stripar 4-byte). Usuário valida antes de avançar.
 
-Envia pro Usuário via Telegram a recomendação — cada item com (origem / justificativa objetiva / impacto leve-médio / por que o Coordenador sugere). Usuário aprova uma a uma (pode rejeitar, aceitar, ou pedir ajuste).
+#### Passo 1 — TRÊS HISTÓRIAS + TABELA COMBINADA
 
-Após aprovação, Coordenador consolida `/opt/mitra-factory/output/historia_implantacao_<sistema>.md`: narrativa clique-a-clique, 4 perguntas respondidas — (1) melhor maneira de ingerir dados, (2) o que é puxado / extraído automático, (3) como mantém depois, (4) história feliz por persona até primeiro objetivo — e inventário de cobertura rota↔passo (toda rota do mapa tem que estar na tabela). → `PIPELINE.HISTORIA_IMPLANTACAO` via `runDmlMitra` (stripar 4-byte).
+O Re-Round parte do princípio de que o incumbente é o GOL. Três narrativas são escritas e cruzadas pra produzir a tabela combinada, que vira o escopo do Round.
 
-#### Passo 3 — TABELA DE FEATURES + APROVAÇÃO
+**1a. historia_sistema_atual** — Coordenador escreve a partir do mapa, clique a clique do que o código já executa, persona por persona. Não inventa; narra. É essa história que define as LINHAS DE HISTÓRIA DE USUÁRIO que o sistema atual cobre hoje. → `PIPELINE.HISTORIA_SISTEMA_ATUAL`.
 
-Coordenador produz `/opt/mitra-factory/output/lista_features_<sistema>.md`:
+**1b. historia_incumbente** — Coordenador pega cada história levantada em 1a e pesquisa **como o incumbente faz a mesma história**. Pra cada uma, registra três dimensões:
+- **Qualidade** — o resultado final do incumbente é bom? (acurácia, confiança no dado, ausência de bugs)
+- **Método** — como o incumbente chega lá? (passos, vocabulário, UX, automações)
+- **Amplitude** — o quanto o incumbente cobre daquela história? (casos tratados, edge cases suportados)
 
-| # | Feature | Parágrafo da história (âncora) | Nota incumbente 0-10 | Nossa nota 0-10 | Gap (spec técnica) |
+Regras: URL da doc oficial por afirmação (`help.<x>.com` / `support.<x>.com` / `docs.<x>.com`); mínimo 15-20 WebFetches; `⚠️ FONTE NÃO ENCONTRADA` onde faltar; 2-3 players pra lacunas (apresentar opções ao Usuário). → `PIPELINE.HISTORIA_INCUMBENTE`.
 
-Regras:
-- Cada feature ancorada a 1+ parágrafos da história. Sem âncora, não entra.
-- Notas com evidência: Playwright+SQL pro nosso; URL/doc pro incumbente.
-- Gap como spec técnica ("adicionar botão X na rota Y disparando SF Z"), nunca frase vaga.
-- Antes de enviar: count(features) == count(parágrafos-com-âncora); nenhum parágrafo sem feature. Se falha, refaz.
+**Por que pesquisar o incumbente assim:** é o que dá matéria-prima pro Coordenador propor a história terceira (combinada) — pra cada história do sistema atual, o Coordenador sabe qual é o "teto" que o cliente já conhece do incumbente, e pode usar isso como inspiração pra elevar a Mitra.
 
-→ `PIPELINE.LISTA_FEATURES_REROUND` via `runDmlMitra`. Usuário aprova. Transição `preparacao_reround` → `execucao_reround`.
+**1c. historia_intencionada** — Coordenador pergunta ao Usuário: "Você tem história base em mente pro <sistema>? Usuário principal, objetivo Dia 1, atalhos esperados?". Vazia → `[sem história intencionada]`. → `PIPELINE.HISTORIA_INTENCIONADA`.
 
-#### Passo 4 — DEV
+**1d. tabela_historias_combinadas** — Coordenador consolida após 1a+1b+1c. É a lista única de histórias de usuário que o sistema Mitra precisa cumprir na V1 de produção. Não é média das 3 — é a TERCEIRA história, construída com intencionada dominando divergências, incumbente servindo como inspiração de qualidade/método/amplitude, atual informando o que já existe.
 
-Recebe a tabela aprovada + `questionamentos.md` obrigatório + `dev.md` inteiro + histórico de QAs anteriores.
+Formato: `# | História de usuário | Persona | Fluxo resumido | Origem (atual/intencionada/incumbente) | Referência Incumbente (qualidade/método/amplitude que inspira)`.
 
-#### Passo 5 — QA IMPLANTADOR
+**Ordem fixa obrigatória:**
+- `#1` = IMPLANTAÇÃO DIA 1 — cliente virgem até sistema operando.
+- `#2` = ATUALIZAÇÃO MENSAL — fechar 1 mês (ou ciclo equivalente do domínio).
+- `#3+` = 1 por história adicional. Cobertura 100% das rotas do mapa + toda ação documentada nas 3 histórias.
 
-Executa a história Dia 1 ponta a ponta, só pela UI via Playwright, simulando cliente. SDK só pra SELECT verificar persistência pós-ação. Create-from-scratch obrigatório (criar entidades novas pela UI; seed mascara bugs).
+**Alinhamento obrigatório com o Usuário antes de fechar a tabela.** Coordenador manda pro Usuário via Telegram:
+- A tabela rascunhada.
+- Suas SUGESTÕES: quais melhorias em histórias atuais e quais NOVAS histórias (vindas do incumbente) são fundamentais pra V1 de produção. Coordenador toma posição; não se omite. Critério: "sem isso, V1 é inviável pro cliente real" (não enrichment cosmético).
+- Pergunta: "aceita? quer adicionar/tirar alguma?".
 
-Briefing: `qa.md` inteiro + este Passo 5 + historia_implantacao + último QA + tabela do Passo 3.
+Usuário decide linha a linha. Coordenador ajusta. Persiste em `PIPELINE.TABELA_HISTORIAS_COMBINADAS` e avança ao Passo 2.
 
-**Entrega obrigatória — `/opt/mitra-factory/output/qa_reround_<sistema>_r<N>.md`** contendo, nesta ordem:
+#### Passo 2 — TABELA DE HISTÓRIAS DE USUÁRIO + TESTE REAL
 
-1. **Tabela feature-a-feature** (seção principal, nunca omissível; feature ausente = QA rejeitado):
+Coordenador ABRE o sistema e TESTA cada linha da tabela combinada, **pela UI, com Playwright, clicando cada botão**, como persona real, com dados de entrada reais do domínio (não seed nas histórias #1 e #2).
 
-   | # | Feature | Parágrafo da história | Nota 0-10 | Status 🟢/🟡/🔴 | Evidência (screenshot UI + query SQL) |
+Produz `/opt/mitra-factory/output/tabela_historias_usuario_<sistema>.md`. Colunas fixas:
 
-   Uma linha por feature da tabela do Passo 3. Nota cai pra 0 automática se o wizard/tela não reflete o passo correspondente da história (vocabulário, ordem, cliques, resultados).
+| # | História de Usuário | Narrativa Mitra (o que executei clique-a-clique, com link pros screenshots) | Narrativa Incumbente (URL por afirmação) | Nota Mitra 0-10 (fundamentada no teste) | Nota Incumbente 0-10 (fundamentada em doc) | Gap (texto: o que o Mitra precisa virar pra fechar o delta) | Bugs encontrados (lista: P0 bloqueia / P1 termina com erro / P2 UX quebrada; com reprodução + screenshot) |
 
-2. **Seções padrão A-D** (veredito = pior nota):
-   - A) Visual (27 checks do qa.md)
-   - B) Funcional (fluxo da história pela UI)
-   - C) Performance (tempos vs história)
-   - D) Vocabulário/História (alinhamento tela↔história)
+**Metodologia de teste (obrigatória por linha):**
 
-3. **Seções complementares obrigatórias:**
-   - E) Narrativa 1ª pessoa da implantação (telas abertas, botões clicados, erros, recuperação)
-   - F) O que deu certo (wins: features sólidas, UX, persistência, performance)
-   - G) Gaps abertos com spec técnica pro próximo Passo 4
+1. **UI** — abrir URL da rota, clicar cada botão, preencher cada campo, submeter. Screenshot antes e depois de cada ação relevante. Registrar erros do console.
+2. **Persistência** — após cada submit, query SDK no banco pra confirmar que os dados gravaram com os valores corretos.
+3. **Fluxo de dados (propagação)** — dado criado no Passo X aparece no Passo Y? (ex: razão importada aparece na DRE consolidada; ajuste aprovado impacta variância; eliminação aplicada zera o saldo intercompany). Registrar o caminho do dado atravessando o sistema, não só o insert.
+4. **Bugs** — tudo que quebrou, produziu erro, ou rendeu resultado diferente da história intencionada vira linha na coluna Bugs. Classificar P0/P1/P2. Cada bug com passos de reprodução + screenshot + query SDK se aplicável.
 
-Qualquer P0 em A-D = 🔴 (design porco é bloqueador, não cosmético).
+**Dados para teste:**
+- #1 IMPLANTAÇÃO e #2 ATUALIZAÇÃO: dados de entrada **reais do domínio**, sejam quais forem (upload, cadastro manual, API, formulário). Nunca seed. Coordenador prepara os dados antes de testar, reproduzindo o que um cliente real traria.
+- #3+: seed OK se o fluxo não exige entrada nova.
 
-Coordenador grava linha em HISTORICO_REROUND (FASE='QA', ROUND_NUMERO=N, notas A-D, nota agregada feature-a-feature, PERCENT_PRODUCTION_READY).
+**Evidências:**
+- Pasta `/opt/mitra-factory/output/evidencias/<sistema>/historia_<N>/` com screenshots numerados + arquivo `steps.md` registrando cada clique.
+- Referência às evidências na coluna Narrativa Mitra ("ver evidencias/historia_1/step_07.png").
 
-#### Passo 6 — LOOP
+**Persistência:** `PIPELINE.TABELA_HISTORIAS_USUARIO` (TEXT) via `runDmlMitra` (stripar 4-byte). Coordenador envia link do arquivo pro Usuário via Telegram pedindo revisão.
 
-QA 🟢 em A-D E toda feature MUST ≥10 → `execucao_reround` → `producao`. Qualquer feature MUST <10 ou seção 🔴 → volta pro Passo 4 com gaps específicos.
+**Nota crítica:** Coordenador NÃO propõe adições de incumbente que não estejam fechando gap de história testada. Toda coluna "Gap" tem que vir observada no teste real (Nota Mitra < Nota Incumbente porque a história Mitra travou em X passo). Se Nota Mitra == 10 e Incumbente == 10, a linha Gap fica vazia. Enrichment cosmético é proibido.
 
-Detector de loop morto: se 3 rounds consecutivos com `delta_% < 30` (PERCENT_PRODUCTION_READY(N) − PERCENT_PRODUCTION_READY(N-1)) ou nenhum P0 fechado, pausar:
+#### Passo 3 — ESCOLHA DE ESCOPO (Usuário)
+
+Coordenador entrega a tabela completa pro Usuário. Comunicação Telegram:
+
+1. Link pro arquivo `tabela_historias_usuario_<sistema>.md`.
+2. Resumo: quantas histórias, quantos bugs P0/P1/P2 encontrados, quantas linhas com Gap textual.
+3. Pergunta objetiva: "Bugs entram TODOS no backlog — ok? Gaps — quais você quer fechar na nossa PRIMEIRA VERSÃO DE PRODUÇÃO?".
+
+Usuário escolhe os gaps um a um (aceita/rejeita/ajusta). Bugs não são discutidos; entram.
+
+Coordenador consolida `/opt/mitra-factory/output/gap_selection_<sistema>.md` como **documento autônomo** que define o escopo do Dev (o Dev não vai ler outros arquivos — tudo que ele precisa saber está aqui):
+
+| # | Item | Tipo (bug/gap) | Spec técnica |
+
+A coluna "Spec técnica" contém, por item: rota/tela envolvida, tabelas/SFs afetadas, passos de reprodução (bugs) ou comportamento esperado (gaps), resultado aceito, screenshots inline se houver. Coordenador inlina aqui tudo que veio da tabela do Passo 2 e das evidências.
+
+→ `PIPELINE.LISTA_FEATURES_REROUND` via `runDmlMitra`.
+
+#### Passo 4 — LOOP DEV ⇄ QA (execucao_reround)
+
+Transição `preparacao_reround` → `execucao_reround`.
+
+Loop até `gap_selection` inteiro entregue e todos os bugs fechados:
+
+**4.1 Dev sub-agent.** Briefing: `dev.md` inteiro + system prompt do Mitra inteiro (Dev TEM QUE LER TUDO — SDK, plataforma, regras) + `gap_selection_<sistema>.md` (escopo: todos os bugs e melhorias a serem feitas, cada item com spec técnica, passos de reprodução, resultado esperado, tabela/SF/rota envolvida já inlinados pelo Coordenador). Dev faz TUDO do gap_selection — não há ordem de ataque, não há priorização, todos os itens saem entregues.
+
+**4.2 QA sub-agent.** Briefing: `qa.md` inteiro + este Passo 4 + gap_selection entregue + histórico. Valida linha por linha da tabela combinada o que o Dev declarou pronto: UI pela rota real + SELECT SDK pra persistência + propagação do dado. Relatório em `/opt/mitra-factory/output/qa_reround_<sistema>_r<N>.md` com:
+
+- Tabela re-executada: `# | História | Nota r<N> | Status 🟢/🟡/🔴 | Bugs residuais | Evidências`.
+- Seções A-D (Visual / Funcional / Performance / Vocabulário) — veredito = pior nota. P0 em qualquer seção = 🔴.
+- E) Narrativa 1ª pessoa. F) O que deu certo. G) Gaps/bugs residuais com spec técnica.
+
+Coordenador grava `HISTORICO_REROUND` (FASE='QA', ROUND=N, notas A-D, PERCENT_PRODUCTION_READY).
+
+**4.3 Decisão.** Se sobraram bugs/gaps → nova iteração 4.1 com spec técnica dos resíduos. Se `gap_selection` todo entregue e QA 🟢 em todas linhas da tabela → avançar pro Passo 5.
+
+**Detector de loop morto:** 3 rounds consecutivos com `delta_PERCENT < 30` ou nenhum P0 fechado → pausar o loop:
 1. `pullFromS3Mitra` do código atual.
 2. Ler source TypeScript real.
 3. Identificar causa raiz (briefing vago? feature mal especificada? Dev interpretando cosmético?).
-4. Refatorar briefing do Dev (spec técnica detalhada).
+4. Refatorar briefing do Dev (spec técnica por bug/gap).
 5. Avisar Usuário via Telegram com diagnóstico antes de retomar.
 
+#### Passo 5 — QA IMPLANTADORA FINAL (gate de produção)
+
+QA Implantadora sub-agent assume o papel de cliente real e **re-executa a tabela combinada inteira do zero**, simulando implantação Dia 1 e atualização mensal. Só pela UI, Playwright, dados de entrada reais do domínio (não seed). Briefing: `qa.md` inteiro + este Passo 5 + tabela_historias_combinadas + gap_selection + histórico.
+
+Entrega `/opt/mitra-factory/output/qa_implantadora_<sistema>.md`:
+- Tabela final: `# | História | Executou? | Persistiu? | Propagou? | Bugs encontrados`.
+- Narrativa 1ª pessoa da implantação (Dia 1) e de uma atualização (Dia N).
+- Seções A-D + E (narrativa) + F (wins) + G (resíduos).
+- Veredito único: 🟢 APROVADO PRA PRODUÇÃO / 🔴 REPROVADO.
+
+**Decisão:**
+- 🟢 → transição `execucao_reround` → `producao`. Coordenador entrega relatório final ao Usuário via Telegram. Fim do Round.
+- 🔴 → volta pro Passo 4 com os bugs/gaps residuais virando novo `gap_selection`.
+
 **Incumbente**: campo `INCUMBENTE` na tabela `PIPELINE` — sempre consultar o banco, nunca hardcodar. Se vazio, perguntar ao Usuário antes de iniciar o Re-Round.
+
+**Anti-padrão crítico:** Coordenador comparando features com incumbente e propondo "adições legais" sem ter testado o sistema é PAPARICALHO. Toda adição tem que ser consequência de um teste real onde o sistema TRAVOU ou ficou INFERIOR ao incumbente numa história observada. Se o Coordenador percebe que está comparando feature por feature sem ter executado Playwright, está fora do trilho — retomar o Passo 2 ou abortar o Round.
 
 ---
 
